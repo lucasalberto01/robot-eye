@@ -1,0 +1,18 @@
+{
+  "C_Cpp.clang_format_style": "file",
+  "C_Cpp.clang_format_fallbackStyle": "{BasedOnStyle: Google, IndentWidth: 4}",
+  "C_Cpp.clang_format_sortIncludes": true,
+  "files.associations": {
+    "*.aiml": "xml",
+    "array": "cpp",
+    "string": "cpp",
+    "string_view": "cpp",
+    "deque": "cpp",
+    "unordered_map": "cpp",
+    "unordered_set": "cpp",
+    "vector": "cpp",
+    "initializer_list": "cpp",
+    "regex": "cpp",
+    "random": "cpp"
+  }
+}

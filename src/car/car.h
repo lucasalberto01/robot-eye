@@ -1,0 +1,56 @@
+#ifndef CAR_H
+#define CAR_H
+
+/*
+  The resolution of the PWM is 8 bit so the value is between 0-255
+  We will set the speed between 100 to 255.
+*/
+enum speedSettings {
+    SLOW = 165,
+    NORMAL = 185,
+    FAST = 255
+};
+
+class Car {
+   private:
+    // Motor 1 connections
+    int in1 = 16;
+    int in2 = 17;
+    // Motor 2 connections
+    int in3 = 32;
+    int in4 = 33;
+
+    // PWM Setup to control motor speed
+    const int SPEED_CONTROL_PIN_1 = 25;
+    const int SPEED_CONTROL_PIN_2 = 26;
+    // Play around with the frequency settings depending on the motor that you are using
+    const int freq = 2000;
+    const int channel_0 = 1;
+    const int channel_1 = 2;
+    // 8 Bit resolution for duty cycle so value is between 0 - 255
+    const int resolution = 8;
+
+    // holds the current speed settings, see values for SLOW, NORMAL, FAST
+    speedSettings currentSpeedSettings;
+
+   public:
+    Car();
+    // Turn the car left
+    void turnLeft();
+    // Turn the car right
+    void turnRight();
+    // Move the car forward
+    void moveForward();
+    // Move the car backward
+    void moveBackward();
+    // Stop the car
+    void stop();
+    // Set the speed of the car
+    void setCurrentSpeed(speedSettings speed);
+    // Set the motor speed
+    void setMotorSpeed();
+    // Get the current speed of the car
+    speedSettings getCurrentSpeed();
+};
+
+#endif
