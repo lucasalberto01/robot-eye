@@ -115,3 +115,35 @@ document.getElementById("btn-led").addEventListener("click", () => {
   console.log("LED toggled!");
   sendMessage("led");
 });
+
+document.getElementById("quality-input").addEventListener("change", (e) => {
+  let value = e.target.value;
+  value = parseInt(value);
+  let val = 0;
+  console.log("Quality changed to :: " + value);
+  if (value === 1) {
+    document.getElementById("set-quality").innerHTML = "120p";
+    val = 1;
+  } else if (value === 2) {
+    document.getElementById("set-quality").innerHTML = "240p";
+    val = 5;
+  } else if (value === 3) {
+    document.getElementById("set-quality").innerHTML = "320p";
+    val = 7;
+  } else if (value === 4) {
+    document.getElementById("set-quality").innerHTML = "480p";
+    val = 8;
+  } else if (value === 5) {
+    document.getElementById("set-quality").innerHTML = "720p";
+    val = 11;
+  } else {
+    return;
+  }
+
+  fetch(
+    "http://192.168.4.10/framesize?" +
+      new URLSearchParams({ var: "framesize", val })
+  ).then((response) => {
+    console.log("Quality changed!");
+  });
+});
