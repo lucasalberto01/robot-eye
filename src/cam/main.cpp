@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include <WebSocketsServer.h>
 #include <WiFi.h>
 
 #include "dl_lib.h"
@@ -42,6 +43,10 @@ IPAddress dns(8, 8, 8, 8);
 
 #define FLASH_GPIO_NUM 4
 
+WebSocketsServer webSocket = WebSocketsServer(81);
+uint8_t cam_num;
+bool connected = false;
+
 static const char* _STREAM_CONTENT_TYPE = "multipart/x-mixed-replace;boundary=" PART_BOUNDARY;
 static const char* _STREAM_BOUNDARY = "\r\n--" PART_BOUNDARY "\r\n";
 static const char* _STREAM_PART = "Content-Type: image/jpeg\r\nContent-Length: %u\r\n\r\n";
@@ -78,7 +83,7 @@ static esp_err_t streamToggleFlash(httpd_req_t* req) {
     httpd_resp_send(req, resp, HTTPD_RESP_USE_STRLEN);
     return ESP_OK;
 }
-
+/*
 static esp_err_t streamHandler(httpd_req_t* req) {
     camera_fb_t* fb = NULL;
     esp_err_t res = ESP_OK;
@@ -136,7 +141,7 @@ static esp_err_t streamHandler(httpd_req_t* req) {
     }
     return res;
 }
-
+*/
 static esp_err_t streamChangeFrameSize(httpd_req_t* req) {
     char* buf = NULL;
     char variable[32];
@@ -172,18 +177,25 @@ static esp_err_t streamChangeFrameSize(httpd_req_t* req) {
     return httpd_resp_send(req, NULL, 0);
 }
 
+static esp_err_t streamIndex(httpd_req_t* req) {
+    httpd_resp_set_type(req, "text/html");
+    String html = "<html><head><title>ESP32-CAM</title></head><body>";
+    httpd_resp_send(req, html.c_str(), html.length());
+    return ESP_OK;
+}
+
 void startCameraServer() {
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
     config.server_port = 80;
 
-    httpd_uri_t index_uri = {
-        .uri = "/",
-        .method = HTTP_GET,
-        .handler = streamHandler,
-        .user_ctx = NULL,
-        .is_websocket = true,
-        .handle_ws_control_frames = false,
-        .supported_subprotocol = NULL};
+    // httpd_uri_t index_uri = {
+    //     .uri = "/",
+    //     .method = HTTP_GET,
+    //     .handler = streamHandler,
+    //     .user_ctx = NULL,
+    //     .is_websocket = true,
+    //     .handle_ws_control_frames = false,
+    //     .supported_subprotocol = NULL};
 
     httpd_uri_t toggle_uri = {
         .uri = "/toggle",
@@ -197,17 +209,59 @@ void startCameraServer() {
         .handler = streamChangeFrameSize,
         .user_ctx = NULL};
 
+    httpd_uri_t index_uri = {
+        .uri = "/",
+        .method = HTTP_GET,
+        .handler = streamIndex,
+        .user_ctx = NULL};
+
     // Serial.printf("Starting web server on port: '%d'\n", config.server_port);
     if (httpd_start(&stream_httpd, &config) == ESP_OK) {
         httpd_register_uri_handler(stream_httpd, &toggle_uri);
         httpd_register_uri_handler(stream_httpd, &frame_size_uri);
+        httpd_register_uri_handler(stream_httpd, &index_uri);
     }
 
-    config.server_port += 1;
-    config.ctrl_port += 1;
-    log_i("Starting stream server on port: '%d'", config.server_port);
-    if (httpd_start(&stream_httpd, &config) == ESP_OK) {
-        httpd_register_uri_handler(stream_httpd, &index_uri);
+    // config.server_port += 1;
+    // config.ctrl_port += 1;
+    // log_i("Starting stream server on port: '%d'", config.server_port);
+    // if (httpd_start(&stream_httpd, &config) == ESP_OK) {
+    //     httpd_register_uri_handler(stream_httpd, &index_uri);
+    // }
+}
+
+void liveCam(uint8_t num) {
+    // capture a frame
+    camera_fb_t* fb = esp_camera_fb_get();
+    if (!fb) {
+        Serial.println("Frame buffer could not be acquired");
+        return;
+    }
+    // replace this with your own function
+    webSocket.sendBIN(num, fb->buf, fb->len);
+
+    // return the frame buffer back to be reused
+    esp_camera_fb_return(fb);
+}
+
+void webSocketEvent(uint8_t num, WStype_t type, uint8_t* payload, size_t length) {
+    switch (type) {
+        case WStype_DISCONNECTED:
+            Serial.printf("[%u] Disconnected!\n", num);
+            break;
+        case WStype_CONNECTED:
+            Serial.printf("[%u] Connected", num);
+            cam_num = num;
+            connected = true;
+            break;
+        case WStype_TEXT:
+        case WStype_BIN:
+        case WStype_ERROR:
+        case WStype_FRAGMENT_TEXT_START:
+        case WStype_FRAGMENT_BIN_START:
+        case WStype_FRAGMENT:
+        case WStype_FRAGMENT_FIN:
+            break;
     }
 }
 
@@ -236,11 +290,11 @@ void setup() {
     config.pin_sscb_scl = SIOC_GPIO_NUM;
     config.pin_pwdn = PWDN_GPIO_NUM;
     config.pin_reset = RESET_GPIO_NUM;
-    config.xclk_freq_hz = 20000000;
+    config.xclk_freq_hz = 8000000;
     config.pixel_format = PIXFORMAT_JPEG;
     config.frame_size = FRAMESIZE_VGA;
-    config.jpeg_quality = 10;
-    config.fb_count = 2;
+    config.jpeg_quality = 20;
+    config.fb_count = 3;
 
     // Iniciação da câmera
     esp_err_t err = esp_camera_init(&config);
@@ -268,10 +322,17 @@ void setup() {
 
     // Início da transmissão no servidor Web
     startCameraServer();
+    webSocket.begin();
+    webSocket.onEvent(webSocketEvent);
     Serial.print("Camera Stream Ready! Go to: http://");
     Serial.print(WiFi.localIP());
 
     pinMode(FLASH_GPIO_NUM, OUTPUT);
 }
 
-void loop() { delay(1); }
+void loop() {
+    webSocket.loop();
+    if (connected == true) {
+        liveCam(cam_num);
+    }
+}

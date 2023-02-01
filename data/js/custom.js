@@ -1,9 +1,14 @@
 var targetUrl = `ws://${window.location.hostname}/ws`;
+var camIp = "192.168.4.10";
 var websocket;
+var liveSocket;
+var FPS = 0;
+var lastFrameTime = 0;
 window.addEventListener("load", onLoad);
 
 function onLoad() {
   initializeSocket();
+  initLive();
 }
 
 function initializeSocket() {
@@ -106,7 +111,7 @@ document.getElementById("text-submit").addEventListener("submit", (e) => {
 });
 
 document.getElementById("btn-flash").addEventListener("click", () => {
-  fetch("http://192.168.4.10/toggle").then((response) => {
+  fetch(`http://${camIp}/toggle`).then((response) => {
     console.log("Flashlight toggled!");
   });
 });
@@ -141,9 +146,42 @@ document.getElementById("quality-input").addEventListener("change", (e) => {
   }
 
   fetch(
-    "http://192.168.4.10/framesize?" +
+    `http://${camIp}/framesize?` +
       new URLSearchParams({ var: "framesize", val })
   ).then((response) => {
     console.log("Quality changed!");
   });
 });
+
+function liveOpen() {
+  console.log("Opening Live Stream...");
+}
+
+function liveClose() {
+  console.log("Closing Live Stream...");
+  setTimeout(initLive, 2000);
+}
+
+function liveMessage(msg) {
+  var bytes = new Uint8Array(msg.data);
+  var binary = "";
+  var len = bytes.byteLength;
+  for (var i = 0; i < len; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  var img = document.getElementById("live");
+  img.src = "data:image/jpg;base64," + window.btoa(binary);
+  FPS = 1000 / (Date.now() - lastFrameTime);
+  lastFrameTime = Date.now();
+  document.getElementById("fps").innerHTML = FPS.toFixed(2);
+}
+
+function initLive() {
+  console.log("Initializing Live Stream...");
+  var host = `ws://${camIp}:81`;
+  liveSocket = new WebSocket(host);
+  liveSocket.binaryType = "arraybuffer";
+  liveSocket.onopen = liveOpen;
+  liveSocket.onclose = liveClose;
+  liveSocket.onmessage = liveMessage;
+}
