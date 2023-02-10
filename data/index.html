@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
 
     <title>ESP32 Robot Car Using Websocket</title>
     <link href="css/bootstrap.min.css" rel="stylesheet" type="text/css">
@@ -38,8 +38,10 @@
                 </div>
             </div>
         </div>
-
-        <div class="parent">
+        <div id="joy-advanced" class="d-flex justify-content-center mt-3 ">
+            <canvas id="canvas_joystick" style="border: 0px solid red;"></canvas>
+        </div>
+        <div id="joy-basic" class="">
             <div class="set blue">
                 <nav class="o-pad">
                     <a class="up control" data-direction="up"></a>
@@ -48,7 +50,7 @@
                     <a class="left control" data-direction="right"></a>
                 </nav>
             </div>
-            <div class="speed-settings">
+            <div class="speed-settings d-flex justify-content-center ">
                 <span>Speed Settings</span>
             </div>
             <div class="wrapper">
@@ -69,6 +71,8 @@
                     <span>Fast</span>
                 </label>
             </div>
+        </div>
+        <div class="parent">
             <div class="wrapper emotion p-3">
                 <div class="btn-group" role="group">
                     <button type="button" data-emotion="neutral" class="btn btn-secondary btn-emotion">Neutro</button>
@@ -96,11 +100,17 @@
                 </form>
             </div>
         </div>
-    </div>
+        <div class="card mt-3">
+            <div class="card-body">
+                <div class="card-title">Controle</div>
+                <div class="btn-group w-100" role="group" aria-label="Basic example">
+                    <button id="joy-basic-btn" type="button" class="btn btn-secondary w-50">Básico</button>
+                    <button id="joy-advanced-btn" type="button" class="btn btn-secondary w-50">Avançado</button>
+                </div>
+            </div>
+        </div>
     </div>
     <script src="js/custom.js"></script>
-    </div>
-    </div>
 </body>
 
 </html>

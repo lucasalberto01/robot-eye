@@ -58,7 +58,6 @@ Display Grid
 
 .wrapper {
   width: 100%;
-  max-width: 450px;
   display: flex;
   background: #fff;
   min-height: 100px;

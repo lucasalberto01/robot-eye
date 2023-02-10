@@ -25,48 +25,31 @@ Car::Car() {
     ledcAttachPin(SPEED_CONTROL_PIN_1, channel_0);
     ledcAttachPin(SPEED_CONTROL_PIN_2, channel_1);
 
-    // initialize default speed to SLOW
     setCurrentSpeed(speedSettings::NORMAL);
 }
-
-// Turn the car left
-void Car::turnLeft() {
-    Serial.println("car is turning left...");
-    setMotorSpeed();
-    digitalWrite(in1, LOW);
-    digitalWrite(in2, HIGH);
-    digitalWrite(in3, LOW);
-    digitalWrite(in4, LOW);
-}
-
-// Turn the car right
-void Car::turnRight() {
-    Serial.println("car is turning right...");
-    setMotorSpeed();
-    digitalWrite(in1, LOW);
-    digitalWrite(in2, LOW);
-    digitalWrite(in3, LOW);
-    digitalWrite(in4, HIGH);
-}
-
 // Move the car forward
-void Car::moveForward() {
+void Car::moveForward(short int vel) {
     Serial.println("car is moving forward...");
-    setMotorSpeed();
     digitalWrite(in1, LOW);
     digitalWrite(in2, HIGH);
     digitalWrite(in3, LOW);
     digitalWrite(in4, HIGH);
+    int pwm = map(vel, 0, 100, 0, 255);
+    ledcWrite(channel_0, pwm);
+    ledcWrite(channel_1, pwm);
 }
 
 // Move the car backward
-void Car::moveBackward() {
-    setMotorSpeed();
+void Car::moveBackward(short int vel) {
     Serial.println("car is moving backward...");
     digitalWrite(in1, HIGH);
     digitalWrite(in2, LOW);
     digitalWrite(in3, HIGH);
     digitalWrite(in4, LOW);
+
+    int pwm = map(vel, 0, 100, 0, 255);
+    ledcWrite(channel_0, pwm);
+    ledcWrite(channel_1, pwm);
 }
 
 // Stop the car
@@ -82,20 +65,73 @@ void Car::stop() {
     digitalWrite(in4, LOW);
 }
 
+void Car::setCurrentSpeed(speedSettings speed) {
+    currentSpeedSettings = speed;
+}
+
+int Car::checkLimit(int vel) {
+    if (vel > 255) {
+        return 255;
+    } else if (vel < -255) {
+        return -255;
+    }
+
+    return vel;
+}
+
 // Set the motor speed
-void Car::setMotorSpeed() {
-    // change the duty cycle of the speed control pin connected to the motor
-    Serial.print("Speed Settings: ");
-    Serial.println(currentSpeedSettings);
-    ledcWrite(channel_0, currentSpeedSettings);
-    ledcWrite(channel_1, currentSpeedSettings);
+void Car::turn(short int velL, short int velR) {
+    Serial.println("car is turning...");
+    int pwmL = map(velL, -100, 100, -255, 255);
+    int pwmR = map(velR, -100, 100, -255, 255);
+
+    pwmL = checkLimit(pwmL);
+    pwmR = checkLimit(pwmR);
+
+    if (pwmL >= 0) {
+        digitalWrite(in1, LOW);
+        digitalWrite(in2, HIGH);
+    } else {
+        digitalWrite(in1, HIGH);
+        digitalWrite(in2, LOW);
+    }
+
+    if (pwmR >= 0) {
+        digitalWrite(in3, LOW);
+        digitalWrite(in4, HIGH);
+    } else {
+        digitalWrite(in3, HIGH);
+        digitalWrite(in4, LOW);
+    }
+
+    ledcWrite(channel_0, abs(pwmL));
+    ledcWrite(channel_1, abs(pwmR));
 }
-// Set the current speed
-void Car::setCurrentSpeed(speedSettings newSpeedSettings) {
-    Serial.println("car is changing speed...");
-    currentSpeedSettings = newSpeedSettings;
+
+int Car::getSpeed() {
+    return currentSpeedSettings;
 }
-// Get the current speed
+
+void Car::turnLeft() {
+    Serial.println("car is turning left...");
+    digitalWrite(in1, LOW);
+    digitalWrite(in2, HIGH);
+    digitalWrite(in3, LOW);
+    digitalWrite(in4, LOW);
+    ledcWrite(channel_0, this->currentSpeedSettings);
+    ledcWrite(channel_1, this->currentSpeedSettings);
+}
+
+void Car::turnRight() {
+    Serial.println("car is turning right...");
+    digitalWrite(in1, LOW);
+    digitalWrite(in2, LOW);
+    digitalWrite(in3, LOW);
+    digitalWrite(in4, HIGH);
+    ledcWrite(channel_0, this->currentSpeedSettings);
+    ledcWrite(channel_1, this->currentSpeedSettings);
+}
+
 speedSettings Car::getCurrentSpeed() {
     return currentSpeedSettings;
 }

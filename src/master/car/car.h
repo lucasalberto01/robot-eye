@@ -30,26 +30,31 @@ class Car {
     // 8 Bit resolution for duty cycle so value is between 0 - 255
     const int resolution = 8;
 
+   protected:
     // holds the current speed settings, see values for SLOW, NORMAL, FAST
     speedSettings currentSpeedSettings;
 
    public:
     Car();
+    // Move the car forward
+    void moveForward(short int vel);
+    // Move the car backward
+    void moveBackward(short int vel);
+    // Stop the car
+    void stop();
+    // Set the speed settings
+    void setCurrentSpeed(speedSettings speed);
+    // Set the motor speed
+    void turn(short int velLeft, short int velRight);
+    // Check if the speed is within the limit
+    int checkLimit(int vel);
+    // Get the current speed settings
+    int getSpeed();
     // Turn the car left
     void turnLeft();
     // Turn the car right
     void turnRight();
-    // Move the car forward
-    void moveForward();
-    // Move the car backward
-    void moveBackward();
-    // Stop the car
-    void stop();
-    // Set the speed of the car
-    void setCurrentSpeed(speedSettings speed);
-    // Set the motor speed
-    void setMotorSpeed();
-    // Get the current speed of the car
+    // Get the current speed settings
     speedSettings getCurrentSpeed();
 };
 

@@ -10,8 +10,8 @@
 #include "personality/voice.h"
 
 // Change this to your network SSID
-const char* ssid = "<change to your SSID>";
-const char* password = "<change to your password>";
+const char* ssid = "ROBO";
+const char* password = "robo1234";
 
 // AsyncWebserver runs on port 80 and the asyncwebsocket is initialize at this point also
 AsyncWebServer server(80);
@@ -45,16 +45,46 @@ void sendCarCommand(const char* command) {
     // command could be either "left", "right", "forward" or "reverse" or "stop"
     // or speed settings "slow-speed", "normal-speed", or "fast-speed"
     lastCommandTime = millis();
-    if (strcmp(command, "left") == 0) {
+
+    // Advance movement
+    if (strstr(command, "motor#") != NULL) {
+        strtok(strdup(command), "#");
+        int angle = atoi(strtok(NULL, "#"));
+        int speed = atoi(strtok(NULL, "#"));
+
+        // Send command to car
+        if ((angle > 80) && (angle < 100)) {
+            car.moveForward(speed);
+        } else if ((angle > 260) && (angle < 280)) {
+            car.moveBackward(speed);
+        } else if ((angle > 170) && (angle < 190)) {
+            car.turn(0, speed);
+        } else if ((angle > 350) || (angle < 10)) {
+            car.turn(speed, 0);
+        } else if ((angle > 100) && (angle < 170)) {
+            car.turn(speed * 7 / 10, speed);
+        } else if ((angle > 10) && (angle < 80)) {
+            car.turn(speed, speed * 7 / 10);
+        } else if ((angle > 190) && (angle < 260)) {
+            car.turn(-1 * speed * 7 / 10, -1 * speed);
+        } else if ((angle > 280) && (angle < 350)) {
+            car.turn(-1 * speed, -1 * speed * 7 / 10);
+        } else {
+            car.stop();
+        }
+
+    }
+    // Basic movement
+    else if (strcmp(command, "left") == 0) {
         eyes.setAnimation(MD_RobotEyes::E_LOOK_R, true, false, true);
         car.turnLeft();
     } else if (strcmp(command, "right") == 0) {
         eyes.setAnimation(MD_RobotEyes::E_LOOK_L, true, false, true);
         car.turnRight();
     } else if (strcmp(command, "up") == 0) {
-        car.moveForward();
+        car.moveForward(car.getSpeed());
     } else if (strcmp(command, "down") == 0) {
-        car.moveBackward();
+        car.moveBackward(car.getSpeed());
     } else if (strcmp(command, "stop") == 0) {
         car.stop();
     } else if (strcmp(command, "slow-speed") == 0) {
@@ -63,7 +93,9 @@ void sendCarCommand(const char* command) {
         car.setCurrentSpeed(speedSettings::NORMAL);
     } else if (strcmp(command, "fast-speed") == 0) {
         car.setCurrentSpeed(speedSettings::FAST);
-    } else if (strcmp(command, "led") == 0) {
+    }
+    // Illumination
+    else if (strcmp(command, "led") == 0) {
         ledToggle();
     }
     // Emotions
