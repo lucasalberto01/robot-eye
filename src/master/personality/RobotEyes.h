@@ -59,6 +59,7 @@ class MD_RobotEyes {
         E_SCAN_LR,       ///< both eyes scanning Left/Right
         E_SQUINT_BLINK,  ///< both eyes squint and blink
         E_IDLE,          ///< eyes in idle position (no animation)
+        E_HEART,         ///< eyes display a heart
     } emotion_t;
 
     /**
@@ -225,6 +226,7 @@ class MD_RobotEyes {
     static const animFrame_t seqAngry[], seqSad[], seqEvil[], seqEvil2[];
     static const animFrame_t seqSquint[], seqDead[], seqSquintBlink[], seqIdle[];
     static const animFrame_t seqScanUpDown[], seqScanLeftRight[];
+    static const animFrame_t seqHeart[];
 
     // Lookup table to find animation
     static const animTable_t lookupTable[];

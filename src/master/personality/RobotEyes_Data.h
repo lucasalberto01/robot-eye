@@ -113,25 +113,29 @@ const MD_RobotEyes::animFrame_t MD_RobotEyes::seqScanLeftRight[] PROGMEM =
         {{44, 44}, FRAME_TIME},
 };
 
-const MD_RobotEyes::animFrame_t MD_RobotEyes::seqScanUpDown[] PROGMEM =
-    {
-        {{46, 46}, FRAME_TIME * 2},
-        {{47, 47}, FRAME_TIME},
-        {{48, 48}, FRAME_TIME},
-        {{49, 49}, FRAME_TIME},
-        {{50, 50}, FRAME_TIME},
-        {{51, 51}, FRAME_TIME},
+const MD_RobotEyes::animFrame_t MD_RobotEyes::seqScanUpDown[] PROGMEM = {
+    {{46, 46}, FRAME_TIME * 2},
+    {{47, 47}, FRAME_TIME},
+    {{48, 48}, FRAME_TIME},
+    {{49, 49}, FRAME_TIME},
+    {{50, 50}, FRAME_TIME},
+    {{51, 51}, FRAME_TIME},
 };
 
-const MD_RobotEyes::animFrame_t MD_RobotEyes::seqSquintBlink[] PROGMEM =
-    {
-        {{57, 57}, FRAME_TIME},
-        {{5, 5}, FRAME_TIME},
+const MD_RobotEyes::animFrame_t MD_RobotEyes::seqSquintBlink[] PROGMEM = {
+    {{57, 57}, FRAME_TIME},
+    {{5, 5}, FRAME_TIME},
 
 };
 
 const MD_RobotEyes::animFrame_t MD_RobotEyes::seqIdle[] PROGMEM = {
     {{57, 57}, FRAME_TIME},
+};
+
+const MD_RobotEyes::animFrame_t MD_RobotEyes::seqHeart[] PROGMEM = {
+    {{0, 0}, FRAME_TIME},
+    {{59, 59}, FRAME_TIME},
+    {{60, 60}, 2000},
 };
 
 // Lookup table to find animation sequences
@@ -155,6 +159,8 @@ const MD_RobotEyes::animTable_t MD_RobotEyes::lookupTable[] PROGMEM = {
     {MD_RobotEyes::E_IDLE, MD_RobotEyes::seqIdle, ARRAY_SIZE(MD_RobotEyes::seqIdle)},
     {MD_RobotEyes::E_SQUINT, MD_RobotEyes::seqSquint, ARRAY_SIZE(MD_RobotEyes::seqSquint)},
     {MD_RobotEyes::E_SQUINT_BLINK, MD_RobotEyes::seqSquintBlink, ARRAY_SIZE(MD_RobotEyes::seqSquintBlink)},
+    // Emojis
+    {MD_RobotEyes::E_HEART, MD_RobotEyes::seqHeart, ARRAY_SIZE(MD_RobotEyes::seqHeart)},
 
 };
 
@@ -220,8 +226,8 @@ MD_MAX72XX::fontType_t _RobotEyes_Font[] PROGMEM =
         8, 0, 48, 72, 120, 120, 72, 48, 0,      // 56 - 'Peering 3'
         8, 0, 32, 80, 112, 112, 80, 32, 0,      // 57 - 'Peering 4'  Idle position reset
         0,                                      // 58
-        0,                                      // 59 - 'Unused'
-        0,                                      // 60 - 'Unused'
+        8, 0, 28, 34, 114, 114, 34, 28, 0,      // 59 Core 1                                      - 'Unused'
+        8, 0, 28, 34, 100, 100, 34, 28, 0,      // 60 Core 2
         0,                                      // 61 - 'Unused'
         0,                                      // 62 - 'Unused'
         0,                                      // 63 - 'Unused'

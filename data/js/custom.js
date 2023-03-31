@@ -1,5 +1,6 @@
-var targetUrl = `ws://${window.location.hostname}/ws`;
-var camIp = "192.168.4.10";
+var targetUrl = `ws://${window.location.host}/ws`;
+var camIp = "192.168.4.10:81";
+var camConfig = "192.168.4.10";
 var websocket;
 var liveSocket;
 var FPS = 0;
@@ -319,7 +320,7 @@ document.getElementById("text-submit").addEventListener("submit", (e) => {
 });
 
 document.getElementById("btn-flash").addEventListener("click", () => {
-  fetch(`http://${camIp}/toggle`).then((response) => {
+  fetch(`http://${camConfig}/toggle`).then((response) => {
     console.log("Flashlight toggled!");
   });
 });
@@ -354,7 +355,7 @@ document.getElementById("quality-input").addEventListener("change", (e) => {
   }
 
   fetch(
-    `http://${camIp}/framesize?` +
+    `http://${camConfig}/framesize?` +
       new URLSearchParams({ var: "framesize", val })
   ).then((response) => {
     console.log("Quality changed!");
@@ -425,10 +426,14 @@ function liveMessage(msg) {
 
 function initLive() {
   console.log("Initializing Live Stream...");
-  var host = `ws://${camIp}:81`;
-  liveSocket = new WebSocket(host);
-  liveSocket.binaryType = "arraybuffer";
-  liveSocket.onopen = liveOpen;
-  liveSocket.onclose = liveClose;
-  liveSocket.onmessage = liveMessage;
+  try {
+    var host = `ws://${camIp}`;
+    liveSocket = new WebSocket(host);
+    liveSocket.binaryType = "arraybuffer";
+    liveSocket.onopen = liveOpen;
+    liveSocket.onclose = liveClose;
+    liveSocket.onmessage = liveMessage;
+  } catch (e) {
+    console.log(e);
+  }
 }

@@ -14,5 +14,6 @@
     "initializer_list": "cpp",
     "regex": "cpp",
     "random": "cpp"
-  }
+  },
+  "cmake.sourceDirectory": "${workspaceFolder}/.pio/libdeps/esp32dev/AsyncTCP"
 }

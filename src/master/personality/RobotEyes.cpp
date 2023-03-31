@@ -106,8 +106,7 @@ void MD_RobotEyes::showText(bool bInit)
 {
     static enum { S_LOAD,
                   S_SHOW,
-                  S_SPACE
-    } state;
+                  S_SPACE } state;
     static uint8_t curLen, showLen;
     static uint8_t cBuf[EYE_COL_SIZE];
 
@@ -169,9 +168,9 @@ void MD_RobotEyes::showText(bool bInit)
 void MD_RobotEyes::setState(State s) {
     if (s != _state) {
         if (s == SLEEPING && _state == AWAKE) {
-            setAnimation(E_SQUINT, false);
+            setAnimation(E_SQUINT, false, false, true);
         } else if (s == AWAKE && _state == SLEEPING) {
-            setAnimation(E_SQUINT, false, true);
+            setAnimation(E_SQUINT, false, true, true);
         }
         _state = s;
         PRINT("\nState: ", _state);
@@ -238,10 +237,11 @@ bool MD_RobotEyes::runAnimation(void)
             PRINT("\nPROCESS: Frame:", _animIndex);
             loadFrame(&thisFrame);
             drawEyes(thisFrame.eyeData[LEFT_EYE_INDEX], thisFrame.eyeData[RIGHT_EYE_INDEX]);
-            if (_animReverse)
+            if (_animReverse) {
                 _animIndex--;
-            else
+            } else {
                 _animIndex++;
+            }
 
             _timeStartPause = millis();
             _animState = S_PAUSE;
@@ -249,12 +249,12 @@ bool MD_RobotEyes::runAnimation(void)
 
         case S_PAUSE:  // pause this frame for the required timezz
         {
-            if ((millis() - _timeStartPause) < thisFrame.timeFrame)
+            if ((millis() - _timeStartPause) < thisFrame.timeFrame) {
                 break;
+            }
 
             // check if this is the end of animation
-            if ((!_animReverse && _animIndex >= _animEntry.size) ||
-                (_animReverse && _animIndex < 0)) {
+            if ((!_animReverse && _animIndex >= _animEntry.size) || (_animReverse && _animIndex < 0)) {
                 PRINTS("\nPAUSE: Animation end")
                 if (_autoReverse)  // set up the same emotion but in reverse
                 {
@@ -263,10 +263,12 @@ bool MD_RobotEyes::runAnimation(void)
                     _animReverse = true;   // set this flag for the restart state
                     _autoReverse = false;  // clear the flag for this animation sequence
                     _animState = S_RESTART;
-                } else
+                } else {
                     _animState = S_IDLE;
-            } else
+                }
+            } else {
                 _animState = S_ANIMATE;
+            }
         } break;
 
         case S_TEXT:  // currently displaying text
