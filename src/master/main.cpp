@@ -14,6 +14,7 @@ char password[] = "robo1234";
 
 #define HARDWARE_TYPE MD_MAX72XX::FC16_HW  // Change this to your hardware type
 #define MAX_DEVICES 2
+
 #define CS_PIN 5
 #define LED_PIN 13
 
@@ -41,7 +42,7 @@ Car car;
 MD_RobotEyes eyes;
 
 unsigned long lastCommandTime = 0;
-unsigned long timeToSleep = 15000;
+unsigned long timeToSleep = 60000;
 bool ledLightOn = false;
 
 void ledToggle() {
@@ -126,6 +127,8 @@ void sendCarCommand(const char* command) {
         eyes.setAnimation(MD_RobotEyes::E_DEAD, true, false, true);
     } else if (strcmp(command, "core") == 0) {
         eyes.setAnimation(MD_RobotEyes::E_HEART, true, false, true);
+    } else if (strcmp(command, "sleep") == 0) {
+        eyes.setAnimation(MD_RobotEyes::E_SLEEP, true, false, true);
     }
     // Text in display
     else {
@@ -204,6 +207,7 @@ void setup() {
     Serial.begin(115200);
     Serial.println("Connecting to ");
     Serial.println(ssid);
+    WiFi.setSleep(WIFI_PS_NONE);
 
 #if ENABLE_CLIENT
     // Configures static IP address

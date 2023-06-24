@@ -59,7 +59,8 @@ class MD_RobotEyes {
         E_SCAN_LR,       ///< both eyes scanning Left/Right
         E_SQUINT_BLINK,  ///< both eyes squint and blink
         E_IDLE,          ///< eyes in idle position (no animation)
-        E_HEART,         ///< eyes display a heart
+        E_HEART,         ///< eyes display a heart,
+        E_SLEEP,         ///< eyes in sleep position
     } emotion_t;
 
     /**
@@ -107,6 +108,7 @@ class MD_RobotEyes {
      * \param e  the type of emotion to be displayed, one of the emotion_T enumerated values.
      * \param r  if true, run auto reverse.
      * \param b  if true, start the animation from the end of the sequence.
+     * \param force  if true, force the animation to start from the beginning.
      */
     inline void setAnimation(emotion_t e, bool r, bool b = false, bool force = false) {
         _nextEmotion = e;
@@ -226,7 +228,7 @@ class MD_RobotEyes {
     static const animFrame_t seqAngry[], seqSad[], seqEvil[], seqEvil2[];
     static const animFrame_t seqSquint[], seqDead[], seqSquintBlink[], seqIdle[];
     static const animFrame_t seqScanUpDown[], seqScanLeftRight[];
-    static const animFrame_t seqHeart[];
+    static const animFrame_t seqHeart[], seqSleep[];
 
     // Lookup table to find animation
     static const animTable_t lookupTable[];
