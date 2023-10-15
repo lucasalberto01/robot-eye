@@ -11,7 +11,7 @@ class Web {
    public:
     void setup();
     static void notFound(AsyncWebServerRequest* request);
-    void onWsEvent(AsyncWebSocket* server, AsyncWebSocketClient* client, AwsEventType type, void* arg, uint8_t* data, size_t len);
+    static void onWsEvent(AsyncWebSocket* server, AsyncWebSocketClient* client, AwsEventType type, void* arg, uint8_t* data, size_t len);
     static String indexPageProcessor(const String& var);
 };
 

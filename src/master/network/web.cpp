@@ -4,6 +4,7 @@
 #include <ESPAsyncWebServer.h>
 #include <SPI.h>
 
+#include "../core/core.h"
 #include "../core/state.h"
 #include "../types.h"
 #include "SPIFFS.h"
@@ -54,7 +55,7 @@ void Web::onWsEvent(AsyncWebSocket* server, AsyncWebSocketClient* client, AwsEve
                 if (info->opcode == WS_TEXT) {
                     data[len] = 0;
                     char* command = (char*)data;
-                    // sendCarCommand(command);
+                    sendCarCommand(command);
                 }
             }
         }
@@ -82,9 +83,7 @@ void Web::setup() {
     }
 
     // Add callback function to websocket server
-    ws.onEvent([](AsyncWebSocket* server, AsyncWebSocketClient* client, AwsEventType type, void* arg, uint8_t* data, size_t len) {
-        // Web::onWsEvent(server, client, type, arg, data, len);
-    });
+    ws.onEvent(onWsEvent);
 
     server.addHandler(&ws);
 

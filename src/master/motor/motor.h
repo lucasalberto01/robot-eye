@@ -48,8 +48,6 @@ class Motor {
     void turnRight();
     // Get the current speed settings
     speedSettings getCurrentSpeed();
-    // Process commands
-    short processCommand(const char* command);
 };
 
 #endif
