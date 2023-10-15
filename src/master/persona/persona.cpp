@@ -1,5 +1,6 @@
-#include "RobotEyes.h"
+#include "persona.h"
 
+#include "../config.h"
 #include "RobotEyes_Data.h"
 
 // Debugging macros
@@ -25,9 +26,10 @@
 #define PRINTX(s, v)
 #endif
 
-MD_RobotEyes::MD_RobotEyes(void) : _timeBlinkMinimum(5000), _animState(S_IDLE), _autoBlink(true), _nextEmotion(E_NEUTRAL){};
+MD_MAX72XX M = MD_MAX72XX(HARDWARE_TYPE, CS_PIN, MAX_DEVICES);
+Persona::Persona(void) : _timeBlinkMinimum(5000), _animState(S_IDLE), _autoBlink(true), _nextEmotion(E_NEUTRAL){};
 
-void MD_RobotEyes::loadEye(uint8_t module, uint8_t ch) {
+void Persona::loadEye(uint8_t module, uint8_t ch) {
     uint8_t buf[EYE_COL_SIZE];
     uint8_t size = _M->getChar(ch, EYE_COL_SIZE, buf);
 
@@ -36,7 +38,7 @@ void MD_RobotEyes::loadEye(uint8_t module, uint8_t ch) {
     }
 }
 
-void MD_RobotEyes::drawEyes(uint8_t L, uint8_t R)
+void Persona::drawEyes(uint8_t L, uint8_t R)
 // Draw the left and right eyes
 {
     MD_MAX72XX::fontType_t* savedFont = _M->getFont();
@@ -55,7 +57,7 @@ void MD_RobotEyes::drawEyes(uint8_t L, uint8_t R)
 }
 
 #if DEBUG
-void MD_RobotEyes::dumpSequence(const animFrame_t* pBuf, uint8_t numElements)
+void Persona::dumpSequence(const animFrame_t* pBuf, uint8_t numElements)
 // Debugging routine to display an animation table in PROGMEM
 {
     for (uint8_t i = 0; i < numElements; i++) {
@@ -70,7 +72,7 @@ void MD_RobotEyes::dumpSequence(const animFrame_t* pBuf, uint8_t numElements)
 }
 #endif
 
-uint8_t MD_RobotEyes::loadSequence(emotion_t e)
+uint8_t Persona::loadSequence(emotion_t e)
 // Load the next emotion from the static data.
 // Set global variables to the required values
 {
@@ -94,13 +96,13 @@ uint8_t MD_RobotEyes::loadSequence(emotion_t e)
     return (_animEntry.size);
 }
 
-void MD_RobotEyes::loadFrame(animFrame_t* pBuf)
+void Persona::loadFrame(animFrame_t* pBuf)
 // Load the idx'th frame from the frame sequence PROGMEM to normal memory pBuf
 {
     memcpy_P(pBuf, &_animEntry.seq[_animIndex], sizeof(animFrame_t));
 }
 
-void MD_RobotEyes::showText(bool bInit)
+void Persona::showText(bool bInit)
 // Print the text string to the LED matrix modules specified.
 // Message area is padded with blank columns after printing.
 {
@@ -165,7 +167,7 @@ void MD_RobotEyes::showText(bool bInit)
     _M->control(MD_MAX72XX::UPDATE, MD_MAX72XX::ON);
 }
 
-void MD_RobotEyes::setState(State s) {
+void Persona::setState(State s) {
     if (s != _state) {
         if (s == SLEEPING && _state == AWAKE) {
             setAnimation(E_SQUINT, false, false, true);
@@ -177,19 +179,19 @@ void MD_RobotEyes::setState(State s) {
     }
 }
 
-void MD_RobotEyes::begin(MD_MAX72XX* M, uint8_t moduleStart)
+void Persona::begin(uint8_t moduleStart)
 // initialize other stuff after libraries have started
 {
-    PRINTS("\n[MD_RobotEyes Debug]");
-
-    _M = M;
+    PRINTS("\n[Persona Debug]");
+    M.begin();
+    _M = &M;
     _sd = moduleStart;
     _state = AWAKE;
 
     setAnimation(E_NEUTRAL, false);
 };
 
-bool MD_RobotEyes::runAnimation(void)
+bool Persona::runAnimation(void)
 // Animate the eyes
 // Return true if there is no animation happening
 {
@@ -285,3 +287,31 @@ bool MD_RobotEyes::runAnimation(void)
 
     return (_animState == S_IDLE);
 };
+
+void Persona::processCommand(const char* command) {
+    if (strcmp(command, "neutral") == 0) {
+        setAnimation(Persona::E_NEUTRAL, true, false, true);
+    } else if (strcmp(command, "blink") == 0) {
+        setAnimation(Persona::E_BLINK, true, false, true);
+    } else if (strcmp(command, "angry") == 0) {
+        setAnimation(Persona::E_ANGRY, true, false, true);
+    } else if (strcmp(command, "sad") == 0) {
+        setAnimation(Persona::E_SAD, true, false, true);
+    } else if (strcmp(command, "evil") == 0) {
+        setAnimation(Persona::E_EVIL, true, false, true);
+    } else if (strcmp(command, "evil2") == 0) {
+        setAnimation(Persona::E_EVIL2, true, false, true);
+    } else if (strcmp(command, "squint") == 0) {
+        setAnimation(Persona::E_SQUINT, true, false, true);
+    } else if (strcmp(command, "dead") == 0) {
+        setAnimation(Persona::E_DEAD, true, false, true);
+    } else if (strcmp(command, "core") == 0) {
+        setAnimation(Persona::E_HEART, true, false, true);
+    } else if (strcmp(command, "sleep") == 0) {
+        setAnimation(Persona::E_SLEEP, true, false, true);
+    }
+    // Text in display
+    else {
+        setText(strdup(command));
+    }
+}

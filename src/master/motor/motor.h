@@ -1,41 +1,35 @@
-#ifndef CAR_H
-#define CAR_H
+#ifndef MOTOR_H
+#define MOTOR_H
+
+#include "../config.h"
+#include "../types.h"
 
 /*
   The resolution of the PWM is 8 bit so the value is between 0-255
   We will set the speed between 100 to 255.
 */
-enum speedSettings {
-    SLOW = 165,
-    NORMAL = 185,
-    FAST = 255
-};
 
-class Car {
+// EN = is the Arduino pin (requires a PWM pin) connected to the Enable pin of the module
+// IN1 and IN2 are the two digital pins connected to IN1 and IN2 pins of the module
+
+// PWM Setup to control motor speed
+// Do not change these values
+#define FREQ 2000
+#define CHANNEL_0 1
+#define CHANNEL_1 2
+#define RESOLUTION 8
+
+class Motor {
    private:
-    // Motor 1 connections
-    int in1 = 16;
-    int in2 = 17;
-    // Motor 2 connections
-    int in3 = 32;
-    int in4 = 33;
-
-    // PWM Setup to control motor speed
-    const int SPEED_CONTROL_PIN_1 = 25;
-    const int SPEED_CONTROL_PIN_2 = 26;
-    // Play around with the frequency settings depending on the motor that you are using
-    const int freq = 2000;
-    const int channel_0 = 1;
-    const int channel_1 = 2;
-    // 8 Bit resolution for duty cycle so value is between 0 - 255
-    const int resolution = 8;
+    // Check if the speed is within the limit
+    int checkLimit(int vel);
 
    protected:
     // holds the current speed settings, see values for SLOW, NORMAL, FAST
-    speedSettings currentSpeedSettings;
+    speedSettings currentSpeedSettings = speedSettings::NORMAL;
 
    public:
-    Car();
+    Motor();
     // Move the car forward
     void moveForward(short int vel);
     // Move the car backward
@@ -46,8 +40,6 @@ class Car {
     void setCurrentSpeed(speedSettings speed);
     // Set the motor speed
     void turn(short int velLeft, short int velRight);
-    // Check if the speed is within the limit
-    int checkLimit(int vel);
     // Get the current speed settings
     int getSpeed();
     // Turn the car left
@@ -56,6 +48,8 @@ class Car {
     void turnRight();
     // Get the current speed settings
     speedSettings getCurrentSpeed();
+    // Process commands
+    short processCommand(const char* command);
 };
 
 #endif

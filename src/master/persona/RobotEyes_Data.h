@@ -1,12 +1,12 @@
 // EmotiveEye class static variables
 #pragma once
 
-#include "RobotEyes.h"
+#include "../config.h"
 
 // Sequences for animations
 // Note: must add this to the lookupTable below as well so that the animation
 // can be found by the animation engine.
-const MD_RobotEyes::animFrame_t MD_RobotEyes::seqBlink[] PROGMEM =
+const Persona::animFrame_t Persona::seqBlink[] PROGMEM =
     {
         {{0, 0}, FRAME_TIME / 2},
         {{1, 1}, FRAME_TIME / 2},
@@ -16,7 +16,7 @@ const MD_RobotEyes::animFrame_t MD_RobotEyes::seqBlink[] PROGMEM =
         {{5, 5}, FRAME_TIME},
 };
 
-const MD_RobotEyes::animFrame_t MD_RobotEyes::seqWink[] PROGMEM =
+const Persona::animFrame_t Persona::seqWink[] PROGMEM =
     {
         {{0, 0}, FRAME_TIME / 2},
         {{1, 0}, FRAME_TIME / 2},
@@ -26,21 +26,21 @@ const MD_RobotEyes::animFrame_t MD_RobotEyes::seqWink[] PROGMEM =
         {{5, 0}, FRAME_TIME * 2},
 };
 
-const MD_RobotEyes::animFrame_t MD_RobotEyes::seqRight[] PROGMEM =
+const Persona::animFrame_t Persona::seqRight[] PROGMEM =
     {
         {{0, 0}, FRAME_TIME},
         {{6, 6}, FRAME_TIME},
         {{7, 7}, FRAME_TIME * 5},
 };
 
-const MD_RobotEyes::animFrame_t MD_RobotEyes::seqLeft[] PROGMEM =
+const Persona::animFrame_t Persona::seqLeft[] PROGMEM =
     {
         {{0, 0}, FRAME_TIME},
         {{8, 8}, FRAME_TIME},
         {{9, 9}, FRAME_TIME * 5},
 };
 
-const MD_RobotEyes::animFrame_t MD_RobotEyes::seqUp[] PROGMEM =
+const Persona::animFrame_t Persona::seqUp[] PROGMEM =
     {
         {{00, 00}, FRAME_TIME},
         {{11, 11}, FRAME_TIME},
@@ -48,7 +48,7 @@ const MD_RobotEyes::animFrame_t MD_RobotEyes::seqUp[] PROGMEM =
         {{13, 13}, FRAME_TIME * 5},
 };
 
-const MD_RobotEyes::animFrame_t MD_RobotEyes::seqDown[] PROGMEM =
+const Persona::animFrame_t Persona::seqDown[] PROGMEM =
     {
         {{00, 00}, FRAME_TIME},
         {{14, 14}, FRAME_TIME},
@@ -56,7 +56,7 @@ const MD_RobotEyes::animFrame_t MD_RobotEyes::seqDown[] PROGMEM =
         {{16, 16}, FRAME_TIME * 5},
 };
 
-const MD_RobotEyes::animFrame_t MD_RobotEyes::seqAngry[] PROGMEM =
+const Persona::animFrame_t Persona::seqAngry[] PROGMEM =
     {
         {{00, 00}, FRAME_TIME},
         {{22, 17}, FRAME_TIME},
@@ -65,7 +65,7 @@ const MD_RobotEyes::animFrame_t MD_RobotEyes::seqAngry[] PROGMEM =
         {{25, 20}, 2000},
 };
 
-const MD_RobotEyes::animFrame_t MD_RobotEyes::seqSad[] PROGMEM =
+const Persona::animFrame_t Persona::seqSad[] PROGMEM =
     {
         {{00, 00}, FRAME_TIME},
         {{32, 27}, FRAME_TIME},
@@ -73,14 +73,14 @@ const MD_RobotEyes::animFrame_t MD_RobotEyes::seqSad[] PROGMEM =
         {{34, 29}, 2000},
 };
 
-const MD_RobotEyes::animFrame_t MD_RobotEyes::seqEvil[] PROGMEM =
+const Persona::animFrame_t Persona::seqEvil[] PROGMEM =
     {
         {{00, 00}, FRAME_TIME},
         {{39, 37}, FRAME_TIME},
         {{40, 38}, 2000},
 };
 
-const MD_RobotEyes::animFrame_t MD_RobotEyes::seqEvil2[] PROGMEM =
+const Persona::animFrame_t Persona::seqEvil2[] PROGMEM =
     {
         {{00, 00}, FRAME_TIME},
         {{54, 17}, FRAME_TIME},
@@ -89,7 +89,7 @@ const MD_RobotEyes::animFrame_t MD_RobotEyes::seqEvil2[] PROGMEM =
         {{57, 20}, 2000},
 };
 
-const MD_RobotEyes::animFrame_t MD_RobotEyes::seqSquint[] PROGMEM =
+const Persona::animFrame_t Persona::seqSquint[] PROGMEM =
     {
         {{00, 00}, FRAME_TIME},
         {{54, 54}, FRAME_TIME},
@@ -98,14 +98,14 @@ const MD_RobotEyes::animFrame_t MD_RobotEyes::seqSquint[] PROGMEM =
         {{57, 57}, 2000},
 };
 
-const MD_RobotEyes::animFrame_t MD_RobotEyes::seqDead[] PROGMEM =
+const Persona::animFrame_t Persona::seqDead[] PROGMEM =
     {
         {{52, 52}, FRAME_TIME * 4},
         {{53, 53}, FRAME_TIME * 4},
         {{52, 52}, FRAME_TIME * 2},
 };
 
-const MD_RobotEyes::animFrame_t MD_RobotEyes::seqScanLeftRight[] PROGMEM =
+const Persona::animFrame_t Persona::seqScanLeftRight[] PROGMEM =
     {
         {{41, 41}, FRAME_TIME * 2},
         {{42, 42}, FRAME_TIME},
@@ -113,7 +113,7 @@ const MD_RobotEyes::animFrame_t MD_RobotEyes::seqScanLeftRight[] PROGMEM =
         {{44, 44}, FRAME_TIME},
 };
 
-const MD_RobotEyes::animFrame_t MD_RobotEyes::seqScanUpDown[] PROGMEM = {
+const Persona::animFrame_t Persona::seqScanUpDown[] PROGMEM = {
     {{46, 46}, FRAME_TIME * 2},
     {{47, 47}, FRAME_TIME},
     {{48, 48}, FRAME_TIME},
@@ -122,23 +122,23 @@ const MD_RobotEyes::animFrame_t MD_RobotEyes::seqScanUpDown[] PROGMEM = {
     {{51, 51}, FRAME_TIME},
 };
 
-const MD_RobotEyes::animFrame_t MD_RobotEyes::seqSquintBlink[] PROGMEM = {
+const Persona::animFrame_t Persona::seqSquintBlink[] PROGMEM = {
     {{57, 57}, FRAME_TIME},
     {{5, 5}, FRAME_TIME},
 
 };
 
-const MD_RobotEyes::animFrame_t MD_RobotEyes::seqIdle[] PROGMEM = {
+const Persona::animFrame_t Persona::seqIdle[] PROGMEM = {
     {{57, 57}, FRAME_TIME},
 };
 
-const MD_RobotEyes::animFrame_t MD_RobotEyes::seqHeart[] PROGMEM = {
+const Persona::animFrame_t Persona::seqHeart[] PROGMEM = {
     {{0, 0}, FRAME_TIME},
     {{59, 59}, FRAME_TIME},
     {{60, 60}, 2000},
 };
 
-const MD_RobotEyes::animFrame_t MD_RobotEyes::seqSleep[] PROGMEM = {
+const Persona::animFrame_t Persona::seqSleep[] PROGMEM = {
     {{00, 00}, FRAME_TIME},
     {{62, 62}, FRAME_TIME},
     {{63, 63}, FRAME_TIME},
@@ -150,29 +150,29 @@ const MD_RobotEyes::animFrame_t MD_RobotEyes::seqSleep[] PROGMEM = {
 
 // Lookup table to find animation sequences
 // Table associates the data for an emotion with the sequence table and it's size
-const MD_RobotEyes::animTable_t MD_RobotEyes::lookupTable[] PROGMEM = {
-    {MD_RobotEyes::E_NEUTRAL, MD_RobotEyes::seqBlink, 1},  // special case, fixed neutral stare
-    {MD_RobotEyes::E_BLINK, MD_RobotEyes::seqBlink, ARRAY_SIZE(MD_RobotEyes::seqBlink)},
-    {MD_RobotEyes::E_WINK, MD_RobotEyes::seqWink, ARRAY_SIZE(MD_RobotEyes::seqWink)},
-    {MD_RobotEyes::E_LOOK_L, MD_RobotEyes::seqLeft, ARRAY_SIZE(MD_RobotEyes::seqLeft)},
-    {MD_RobotEyes::E_LOOK_R, MD_RobotEyes::seqRight, ARRAY_SIZE(MD_RobotEyes::seqRight)},
-    {MD_RobotEyes::E_LOOK_U, MD_RobotEyes::seqUp, ARRAY_SIZE(MD_RobotEyes::seqUp)},
-    {MD_RobotEyes::E_LOOK_D, MD_RobotEyes::seqDown, ARRAY_SIZE(MD_RobotEyes::seqDown)},
-    {MD_RobotEyes::E_ANGRY, MD_RobotEyes::seqAngry, ARRAY_SIZE(MD_RobotEyes::seqAngry)},
-    {MD_RobotEyes::E_SAD, MD_RobotEyes::seqSad, ARRAY_SIZE(MD_RobotEyes::seqSad)},
-    {MD_RobotEyes::E_EVIL, MD_RobotEyes::seqEvil, ARRAY_SIZE(MD_RobotEyes::seqEvil)},
-    {MD_RobotEyes::E_EVIL2, MD_RobotEyes::seqEvil2, ARRAY_SIZE(MD_RobotEyes::seqEvil2)},
-    {MD_RobotEyes::E_DEAD, MD_RobotEyes::seqDead, ARRAY_SIZE(MD_RobotEyes::seqDead)},
-    {MD_RobotEyes::E_SCAN_LR, MD_RobotEyes::seqScanLeftRight, ARRAY_SIZE(MD_RobotEyes::seqScanLeftRight)},
-    {MD_RobotEyes::E_SCAN_UD, MD_RobotEyes::seqScanUpDown, ARRAY_SIZE(MD_RobotEyes::seqScanUpDown)},
+const Persona::animTable_t Persona::lookupTable[] PROGMEM = {
+    {Persona::E_NEUTRAL, Persona::seqBlink, 1},  // special case, fixed neutral stare
+    {Persona::E_BLINK, Persona::seqBlink, ARRAY_SIZE(Persona::seqBlink)},
+    {Persona::E_WINK, Persona::seqWink, ARRAY_SIZE(Persona::seqWink)},
+    {Persona::E_LOOK_L, Persona::seqLeft, ARRAY_SIZE(Persona::seqLeft)},
+    {Persona::E_LOOK_R, Persona::seqRight, ARRAY_SIZE(Persona::seqRight)},
+    {Persona::E_LOOK_U, Persona::seqUp, ARRAY_SIZE(Persona::seqUp)},
+    {Persona::E_LOOK_D, Persona::seqDown, ARRAY_SIZE(Persona::seqDown)},
+    {Persona::E_ANGRY, Persona::seqAngry, ARRAY_SIZE(Persona::seqAngry)},
+    {Persona::E_SAD, Persona::seqSad, ARRAY_SIZE(Persona::seqSad)},
+    {Persona::E_EVIL, Persona::seqEvil, ARRAY_SIZE(Persona::seqEvil)},
+    {Persona::E_EVIL2, Persona::seqEvil2, ARRAY_SIZE(Persona::seqEvil2)},
+    {Persona::E_DEAD, Persona::seqDead, ARRAY_SIZE(Persona::seqDead)},
+    {Persona::E_SCAN_LR, Persona::seqScanLeftRight, ARRAY_SIZE(Persona::seqScanLeftRight)},
+    {Persona::E_SCAN_UD, Persona::seqScanUpDown, ARRAY_SIZE(Persona::seqScanUpDown)},
     // Idle animations
-    {MD_RobotEyes::E_IDLE, MD_RobotEyes::seqIdle, ARRAY_SIZE(MD_RobotEyes::seqIdle)},
-    {MD_RobotEyes::E_SQUINT, MD_RobotEyes::seqSquint, ARRAY_SIZE(MD_RobotEyes::seqSquint)},
-    {MD_RobotEyes::E_SQUINT_BLINK, MD_RobotEyes::seqSquintBlink, ARRAY_SIZE(MD_RobotEyes::seqSquintBlink)},
+    {Persona::E_IDLE, Persona::seqIdle, ARRAY_SIZE(Persona::seqIdle)},
+    {Persona::E_SQUINT, Persona::seqSquint, ARRAY_SIZE(Persona::seqSquint)},
+    {Persona::E_SQUINT_BLINK, Persona::seqSquintBlink, ARRAY_SIZE(Persona::seqSquintBlink)},
     // Emojis
-    {MD_RobotEyes::E_HEART, MD_RobotEyes::seqHeart, ARRAY_SIZE(MD_RobotEyes::seqHeart)},
+    {Persona::E_HEART, Persona::seqHeart, ARRAY_SIZE(Persona::seqHeart)},
     // Sleep
-    {MD_RobotEyes::E_SLEEP, MD_RobotEyes::seqSleep, ARRAY_SIZE(MD_RobotEyes::seqSleep)},
+    {Persona::E_SLEEP, Persona::seqSleep, ARRAY_SIZE(Persona::seqSleep)},
 
 };
 
@@ -240,7 +240,7 @@ MD_MAX72XX::fontType_t _RobotEyes_Font[] PROGMEM =
         0,                                          // 58
         8, 0, 28, 34, 114, 114, 34, 28, 0,          // 59   - Core 1
         8, 0, 28, 34, 100, 100, 34, 28, 0,          // 60   - Core 2
-        0,                                          // 61                                       - 'Unused'
+        0,                                          // 61   - 'Unused'
         8, 129, 193, 161, 145, 137, 133, 131, 129,  // 62   - 'Sleep 1'
         8, 144, 208, 176, 144, 9, 13, 11, 9,        // 63   - 'Sleep 2'
         8, 160, 224, 160, 20, 28, 20, 0, 0,         // 64   - 'Sleep 3'
