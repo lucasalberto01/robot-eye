@@ -1,7 +1,8 @@
 #include <Arduino.h>
-#include <WebSocketsServer.h>
+#include <WebSocketsClient.h>
 #include <WiFi.h>
 
+#include "config.h"
 #include "dl_lib.h"
 #include "esp_camera.h"
 #include "esp_http_server.h"
@@ -12,15 +13,14 @@
 #include "soc/soc.h"
 
 // Configuração da rede WiFi
-const char* ssid = "ROBOT-1B:C0";
-const char* password = "robo1234";
+const char* ssid = WIFI_SSID;
+const char* password = WIFI_PASS;
 
 // Set your Static IP address
 IPAddress staticIP(192, 168, 4, 10);
 IPAddress gateway(192, 168, 4, 1);
 IPAddress subnet(255, 255, 255, 0);
 IPAddress dns(8, 8, 8, 8);
-#define PART_BOUNDARY "123456789000000000000987654321"
 
 // Configuração do modelo de câmera (CAMERA_MODEL_AI_THINKER)
 #define PWDN_GPIO_NUM 32
@@ -43,124 +43,29 @@ IPAddress dns(8, 8, 8, 8);
 
 #define FLASH_GPIO_NUM 4
 
-WebSocketsServer webSocket = WebSocketsServer(81);
-uint8_t cam_num;
-bool connected = false;
+WebSocketsClient webSocket;
+TaskHandle_t Task1;
+TaskHandle_t Task2;
 
-static const char* _STREAM_CONTENT_TYPE = "multipart/x-mixed-replace;boundary=" PART_BOUNDARY;
-static const char* _STREAM_BOUNDARY = "\r\n--" PART_BOUNDARY "\r\n";
-static const char* _STREAM_PART = "Content-Type: image/jpeg\r\nContent-Length: %u\r\n\r\n";
+void Task1code(void* pvParameters);
+void Task2code(void* pvParameters);
 
-httpd_handle_t stream_httpd = NULL;
+bool loop_stream = false;
 
-bool flash_led = false;
+void liveCam() {
+#if DEBUG_TIME
+    unsigned long t_start = millis();
+#endif
 
-static esp_err_t parse_get(httpd_req_t* req, char** obuf) {
-    char* buf = NULL;
-    size_t buf_len = 0;
-
-    buf_len = httpd_req_get_url_query_len(req) + 1;
-    if (buf_len > 1) {
-        buf = (char*)malloc(buf_len);
-        if (!buf) {
-            httpd_resp_send_500(req);
-            return ESP_FAIL;
-        }
-        if (httpd_req_get_url_query_str(req, buf, buf_len) == ESP_OK) {
-            *obuf = buf;
-            return ESP_OK;
-        }
-        free(buf);
-    }
-    httpd_resp_send_404(req);
-    return ESP_FAIL;
-}
-
-static esp_err_t streamToggleFlash(httpd_req_t* req) {
-    flash_led = !flash_led;
-    digitalWrite(FLASH_GPIO_NUM, flash_led);
-    const char resp[] = "URI GET Response";
-    httpd_resp_send(req, resp, HTTPD_RESP_USE_STRLEN);
-    return ESP_OK;
-}
-
-static esp_err_t streamChangeFrameSize(httpd_req_t* req) {
-    char* buf = NULL;
-    char variable[32];
-    char value[32];
-
-    if (parse_get(req, &buf) != ESP_OK) {
-        return ESP_FAIL;
-    }
-    if (httpd_query_key_value(buf, "var", variable, sizeof(variable)) != ESP_OK || httpd_query_key_value(buf, "val", value, sizeof(value)) != ESP_OK) {
-        free(buf);
-        httpd_resp_send_404(req);
-        return ESP_FAIL;
-    }
-    free(buf);
-
-    int val = atoi(value);
-    sensor_t* s = esp_camera_sensor_get();
-    int res = 0;
-
-    if (!strcmp(variable, "framesize")) {
-        if (s->pixformat == PIXFORMAT_JPEG) {
-            Serial.print("Framesize : ");
-            Serial.println(val);
-            res = s->set_framesize(s, (framesize_t)val);
-        }
-    }
-
-    if (res < 0) {
-        return httpd_resp_send_500(req);
-    }
-
-    httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
-    return httpd_resp_send(req, NULL, 0);
-}
-
-static esp_err_t streamIndex(httpd_req_t* req) {
-    httpd_resp_set_type(req, "text/html");
-    String html = "<html><head><title>ESP32-CAM</title></head><body>";
-    httpd_resp_send(req, html.c_str(), html.length());
-    return ESP_OK;
-}
-
-void startCameraServer() {
-    httpd_config_t config = HTTPD_DEFAULT_CONFIG();
-    config.server_port = 80;
-
-    httpd_uri_t toggle_uri = {
-        .uri = "/toggle",
-        .method = HTTP_GET,
-        .handler = streamToggleFlash,
-        .user_ctx = NULL};
-
-    httpd_uri_t frame_size_uri = {
-        .uri = "/framesize",
-        .method = HTTP_GET,
-        .handler = streamChangeFrameSize,
-        .user_ctx = NULL};
-
-    httpd_uri_t index_uri = {
-        .uri = "/",
-        .method = HTTP_GET,
-        .handler = streamIndex,
-        .user_ctx = NULL};
-
-    // Serial.printf("Starting web server on port: '%d'\n", config.server_port);
-    if (httpd_start(&stream_httpd, &config) == ESP_OK) {
-        httpd_register_uri_handler(stream_httpd, &toggle_uri);
-        httpd_register_uri_handler(stream_httpd, &frame_size_uri);
-        httpd_register_uri_handler(stream_httpd, &index_uri);
-    }
-}
-
-void liveCam(uint8_t num) {
     esp_err_t res = ESP_OK;
     size_t _jpg_buf_len = 0;
     uint8_t* _jpg_buf = NULL;
     camera_fb_t* fb = esp_camera_fb_get();
+
+#if DEBUG_TIME
+    unsigned long t_end_capture = millis();
+    Serial.printf("Capture in %lu ms - ", t_end_capture - t_start);
+#endif
 
     if (!fb) {
         Serial.println("Frame buffer could not be acquired");
@@ -176,7 +81,15 @@ void liveCam(uint8_t num) {
     }
     if (res == ESP_OK) {
         // replace this with your own function
-        webSocket.sendBIN(num, fb->buf, fb->len);
+        if (webSocket.sendBIN(fb->buf, fb->len) == false) {
+            Serial.println("Error sending frame");
+        }
+
+#if DEBUG_TIME
+        unsigned long t_end_send = millis();
+        Serial.printf("Send in %lu ms - ", t_end_send - t_end_capture);
+        Serial.printf("Signal RSSI: %d dBm\n", WiFi.RSSI());
+#endif
     }
 
     // return the frame buffer back to be reused
@@ -190,30 +103,48 @@ void liveCam(uint8_t num) {
     }
 }
 
-void webSocketEvent(uint8_t num, WStype_t type, uint8_t* payload, size_t length) {
+void webSocketEvent(WStype_t type, uint8_t* payload, size_t length) {
     switch (type) {
         case WStype_DISCONNECTED:
-            Serial.printf("[%u] Disconnected!\n", num);
+            Serial.printf("[] Disconnected!\n");
+            loop_stream = false;
             break;
         case WStype_CONNECTED:
-            Serial.printf("[%u] Connected", num);
-            cam_num = num;
-            connected = true;
+            Serial.printf("[] Connected\n");
             break;
         case WStype_TEXT:
+            Serial.printf("[] Text: %s\n", payload);
+            if (strcmp((char*)payload, "start") == 0) {
+                loop_stream = true;
+                Serial.println("Starting loopStream");
+            } else if (strcmp((char*)payload, "stop") == 0) {
+                loop_stream = false;
+                Serial.println("Stopping loopStream");
+            }
+
+            break;
         case WStype_BIN:
+            Serial.printf("[] Binary: %u\n", length);
+            break;
         case WStype_ERROR:
         case WStype_FRAGMENT_TEXT_START:
         case WStype_FRAGMENT_BIN_START:
         case WStype_FRAGMENT:
         case WStype_FRAGMENT_FIN:
+            Serial.printf("[] Error\n");
             break;
     }
 }
 
 void setup() {
+    // Iniciação da porta serial
     Serial.begin(115200);
+    Serial.setDebugOutput(true);
 
+    // Iniciação do pino do flash
+    pinMode(FLASH_GPIO_NUM, OUTPUT);
+
+    // Configuração da câmera
     camera_config_t config;
     config.ledc_channel = LEDC_CHANNEL_0;
     config.ledc_timer = LEDC_TIMER_0;
@@ -233,11 +164,11 @@ void setup() {
     config.pin_sscb_scl = SIOC_GPIO_NUM;
     config.pin_pwdn = PWDN_GPIO_NUM;
     config.pin_reset = RESET_GPIO_NUM;
-    config.xclk_freq_hz = 8000000;
+    config.xclk_freq_hz = 20000000;  // 20MHz
     config.pixel_format = PIXFORMAT_JPEG;
     // Low(ish) default framesize and quality
-    config.frame_size = FRAMESIZE_VGA;
-    config.jpeg_quality = 12;
+    config.frame_size = FRAMESIZE_QVGA;
+    config.jpeg_quality = 20;
     config.fb_location = CAMERA_FB_IN_PSRAM;
     config.fb_count = 2;
     config.grab_mode = CAMERA_GRAB_LATEST;
@@ -249,11 +180,11 @@ void setup() {
         return;
     }
 
+    // Configuração da rede WiFi
     WiFi.setSleep(WIFI_PS_NONE);
-
-    if (WiFi.config(staticIP, gateway, subnet, dns, dns) == false) {
-        Serial.println("Configuration failed.");
-    }
+    // if (WiFi.config(staticIP, gateway, subnet, dns, dns) == false) {
+    //     Serial.println("Configuration failed.");
+    // }
 
     // Conexão WiFi
     WiFi.begin(ssid, password);
@@ -263,6 +194,8 @@ void setup() {
     }
     Serial.println("");
     Serial.println("WiFi connected");
+
+    // Configuração da câmera
     static sensor_t* s = esp_camera_sensor_get();
     // set initial flips
     s->set_hmirror(s, 1);    // flip it back
@@ -270,19 +203,58 @@ void setup() {
     s->set_gain_ctrl(s, 1);  // enable gain control (auto gain)
     s->set_lenc(s, 1);       // enable lens correction
 
-    // Início da transmissão no servidor Web
-    startCameraServer();
-    webSocket.begin();
+    // Iniciação do WebSocket
+    webSocket.begin(HOST_ADDR, PORT_ADDR, "/");
+    webSocket.setExtraHeaders("X-Auth-Token: 123\r\nX-Device-ID: 123\r\nX-Device-Type: CAM\r\n");
     webSocket.onEvent(webSocketEvent);
-    Serial.print("Camera Stream Ready! Go to: http://");
-    Serial.print(WiFi.localIP());
 
-    pinMode(FLASH_GPIO_NUM, OUTPUT);
+    // Conexão local
+    Serial.print("IP address: ");
+    Serial.println(WiFi.localIP());
+
+    // create a task that will be executed in the Task1code() function, with priority 1 and executed on core 0
+    xTaskCreatePinnedToCore(
+        Task1code, /* Task function. */
+        "Task1",   /* name of task. */
+        10000,     /* Stack size of task */
+        NULL,      /* parameter of the task */
+        1,         /* priority of the task */
+        &Task1,    /* Task handle to keep track of created task */
+        0);        /* pin task to core 0 */
+    delay(500);
+
+    // create a task that will be executed in the Task2code() function, with priority 1 and executed on core 1
+    xTaskCreatePinnedToCore(
+        Task2code, /* Task function. */
+        "Task2",   /* name of task. */
+        10000,     /* Stack size of task */
+        NULL,      /* parameter of the task */
+        1,         /* priority of the task */
+        &Task2,    /* Task handle to keep track of created task */
+        1);        /* pin task to core 1 */
+    delay(500);
+
+    Serial.println("Setup finished");
+}
+
+void Task1code(void* pvParameters) {
+    for (;;) {
+        vTaskDelay(100);
+        yield();
+        webSocket.loop();
+    }
+}
+
+void Task2code(void* pvParameters) {
+    for (;;) {
+        vTaskDelay(2000);
+        yield();
+        while (loop_stream) {
+            liveCam();
+        }
+    }
 }
 
 void loop() {
-    webSocket.loop();
-    if (connected == true) {
-        liveCam(cam_num);
-    }
+    vTaskDelete(NULL);
 }
