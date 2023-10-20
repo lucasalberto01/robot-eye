@@ -1,7 +1,7 @@
 // Implements a class to draw and animate a pair of 'emotive' eyes for a robot
 //
-#ifndef _MD_ROBOT_EYES_H
-#define _MD_ROBOT_EYES_H
+#ifndef ROBOT_EYES_H
+#define ROBOT_EYES_H
 
 #include <MD_MAX72xx.h>
 
@@ -31,7 +31,7 @@ typedef enum {
  * This class manages the displayed of animated eyes using LED matrices using the functions
  * provided by the MD_MAX72xx library.
  */
-class MD_RobotEyes {
+class Persona {
    public:
     /**
      * Emotions enumerated type.
@@ -68,7 +68,7 @@ class MD_RobotEyes {
      *
      * Instantiate a new instance of the class.
      */
-    MD_RobotEyes(void);
+    Persona(void);
 
     /**
      * Class Destructor.
@@ -76,7 +76,7 @@ class MD_RobotEyes {
      * Released any allocated memory and does the necessary to clean
      * up once the object is no longer required.
      */
-    ~MD_RobotEyes(void){};
+    ~Persona(void){};
 
     /**
      * Initialize the object.
@@ -91,7 +91,7 @@ class MD_RobotEyes {
      * /param M            pointer to the MD_MAX72xx library object.
      * /param moduleStart  the first 'eye' LED module. Defaults to 0 if not specified.
      */
-    void begin(MD_MAX72XX* M, uint8_t moduleStart = 0);
+    void begin(uint8_t moduleStart = 0);
 
     /**
      * Set the animation type and parameters.
@@ -167,6 +167,8 @@ class MD_RobotEyes {
 
     void setState(State state);
 
+    void processCommand(const char* command);
+
    protected:
     // Animations FSM state
     typedef enum {
@@ -234,6 +236,6 @@ class MD_RobotEyes {
     static const animTable_t lookupTable[];
 };
 
-typedef MD_RobotEyes::emotion_t Emotion;
+typedef Persona::emotion_t Emotion;
 
-#endif  // _MD_ROBOTEYES_H_
+#endif  // ROBOT_EYES_H
