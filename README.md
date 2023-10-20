@@ -8,31 +8,37 @@ This GitHub project consists of a control system for a mobile robot equipped wit
 
 In open field tests, we were able to control it at a distance of 100 meters
 
+## Compile
+
+```
+copy config.sample.h config.h
+```
+
 ## Hardware/Software
 
-* PlatformIO
-* Esp32
-* Led MAX7219
-* Baterry 3s2p
-* Antenna 9dbi
+- PlatformIO
+- Esp32
+- Led MAX7219
+- Baterry 3s2p
+- Antenna 9dbi
 
 ## Features
 
-* Real time controller
-* Change eye types
-* Control the two treadmills
-* Control movement speed
-* Display texts in eyes
-* Two types of joystick for control
-* FVP (option)
-* Change FPV resolution (option)
-* Controller with Wi-Fi
-* Autonomy of more than 6 hours
+- Real time controller
+- Change eye types
+- Control the two treadmills
+- Control movement speed
+- Display texts in eyes
+- Two types of joystick for control
+- FVP (option)
+- Change FPV resolution (option)
+- Controller with Wi-Fi
+- Autonomy of more than 6 hours
 
 ### Future feature
 
-* Encoder in motors
-* SLAM
+- Encoder in motors
+- SLAM
 
 ## Challenges
 
