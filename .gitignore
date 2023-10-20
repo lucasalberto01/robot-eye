@@ -5,3 +5,4 @@
 .vscode/ipch
 build
 src/cam/config.h
+src/master/config.h
