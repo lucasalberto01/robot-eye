@@ -2,6 +2,7 @@
 #define WEB_H
 
 #include <ESPAsyncWebServer.h>
+#include <WebSocketsClient.h>
 
 #include "../config.h"
 
@@ -9,9 +10,11 @@ class Web {
    private:
     /* data */
    public:
-    void setup();
+    void setup(short mode);
     static void notFound(AsyncWebServerRequest* request);
     static void onWsEvent(AsyncWebSocket* server, AsyncWebSocketClient* client, AwsEventType type, void* arg, uint8_t* data, size_t len);
+    static void webSocketEventClient(WStype_t type, uint8_t* payload, size_t length);
+    static void webSocketEvent(uint8_t num, WStype_t type, uint8_t* payload, size_t length);
     static String indexPageProcessor(const String& var);
 };
 

@@ -13,8 +13,8 @@
 
 // Motor 1
 #define MOTOR_M1_IN1 16
-#define MOTOR_M1_IN2 17
-#define MOTOR_M1_EN 25
+#define MOTOR_M1_IN2 4
+#define MOTOR_M1_EN 0
 
 // Motor 2
 #define MOTOR_M2_IN1 32
@@ -35,5 +35,11 @@
  */
 
 #define LED_PIN 13
+
+/*
+ * CONTROL PANEL
+ */
+
+#define RESER_BTN 2
 
 #endif  // CONFIG_H

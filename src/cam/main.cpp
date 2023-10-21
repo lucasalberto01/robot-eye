@@ -12,6 +12,19 @@
 #include "soc/rtc_cntl_reg.h"
 #include "soc/soc.h"
 
+struct TMe_struct {
+    char ssid[48];
+    char password[48];
+    short mode;
+    char hostname[48];
+    char serialNumber[6];
+    int port;
+};
+
+typedef struct TMe_struct TMe;
+
+TMe me;
+
 // Configuração da rede WiFi
 const char* ssid = WIFI_SSID;
 const char* password = WIFI_PASS;
@@ -84,6 +97,7 @@ void liveCam() {
         if (webSocket.sendBIN(fb->buf, fb->len) == false) {
             Serial.println("Error sending frame");
         }
+        Serial.println("Frame length: " + String(fb->len / 1024) + " Kbytes");
 
 #if DEBUG_TIME
         unsigned long t_end_send = millis();
@@ -141,6 +155,8 @@ void setup() {
     Serial.begin(115200);
     Serial.setDebugOutput(true);
 
+    Serial2.begin(9600, SERIAL_8N1, 13, 14);
+
     // Iniciação do pino do flash
     pinMode(FLASH_GPIO_NUM, OUTPUT);
 
@@ -167,7 +183,7 @@ void setup() {
     config.xclk_freq_hz = 20000000;  // 20MHz
     config.pixel_format = PIXFORMAT_JPEG;
     // Low(ish) default framesize and quality
-    config.frame_size = FRAMESIZE_QVGA;
+    config.frame_size = FRAMESIZE_VGA;
     config.jpeg_quality = 20;
     config.fb_location = CAMERA_FB_IN_PSRAM;
     config.fb_count = 2;
@@ -180,6 +196,26 @@ void setup() {
         return;
     }
 
+    Serial.println("Waiting for message from ESP32-CAM");
+
+    bool awaitMessage = true;
+
+    while (awaitMessage) {
+        while (Serial2.available() > 0) {
+            // Receive TMe struct from ESP32-CAM
+            Serial2.readBytes((byte*)&me, sizeof(me));
+            awaitMessage = false;
+        }
+    }
+
+    Serial.println("Setup started");
+    Serial.println("Setting up WiFi");
+    Serial.println("SSID: " + String(me.ssid));
+    Serial.println("Password: " + String(me.password));
+    Serial.println("Hostname: " + String(me.hostname));
+    Serial.println("Serial Number: " + String(me.serialNumber));
+    Serial.println("Port: " + String(me.port));
+
     // Configuração da rede WiFi
     WiFi.setSleep(WIFI_PS_NONE);
     // if (WiFi.config(staticIP, gateway, subnet, dns, dns) == false) {
@@ -187,7 +223,7 @@ void setup() {
     // }
 
     // Conexão WiFi
-    WiFi.begin(ssid, password);
+    WiFi.begin(me.ssid, me.password);
     while (WiFi.status() != WL_CONNECTED) {
         delay(500);
         Serial.print(".");
@@ -204,7 +240,7 @@ void setup() {
     s->set_lenc(s, 1);       // enable lens correction
 
     // Iniciação do WebSocket
-    webSocket.begin(HOST_ADDR, PORT_ADDR, "/");
+    webSocket.begin(me.hostname, me.port, "/ws", "ESPCAM");
     webSocket.setExtraHeaders("X-Auth-Token: 123\r\nX-Device-ID: 123\r\nX-Device-Type: CAM\r\n");
     webSocket.onEvent(webSocketEvent);
 

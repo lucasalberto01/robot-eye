@@ -1,6 +1,6 @@
 var targetUrl = `ws://${window.location.host}/ws`;
-var camIp = "192.168.4.10:81";
-var camConfig = "192.168.4.10";
+// var camIp = "192.168.4.10:81";
+// var camConfig = "192.168.4.10";
 var websocket;
 var liveSocket;
 var FPS = 0;
@@ -25,12 +25,13 @@ window.addEventListener("deviceorientation", function (event) {
 window.addEventListener("load", onLoad);
 function onLoad() {
   initializeSocket();
-  initLive();
+  // initLive();
 }
 
 function initializeSocket() {
   console.log("Opening WebSocket connection to ESP32...");
   websocket = new WebSocket(targetUrl);
+  websocket.binaryType = "arraybuffer";
   websocket.onopen = onOpen;
   websocket.onclose = onClose;
   websocket.onmessage = onMessage;
@@ -42,10 +43,20 @@ function onClose(event) {
   console.log("Closing connection to server..");
   setTimeout(initializeSocket, 2000);
 }
-function onMessage(event) {
-  console.log("WebSocket message received:", event);
-}
 
+function onMessage(event) {
+  var bytes = new Uint8Array(event.data);
+  var binary = "";
+  var len = bytes.byteLength;
+  for (var i = 0; i < len; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  var img = document.getElementById("live");
+  img.src = "data:image/jpg;base64," + window.btoa(binary);
+  FPS = 1000 / (Date.now() - lastFrameTime);
+  lastFrameTime = Date.now();
+  document.getElementById("fps").innerHTML = FPS.toFixed(2);
+}
 function sendMessage(message) {
   if (websocket.readyState === WebSocket.OPEN) websocket.send(message);
 }
@@ -401,39 +412,25 @@ changeTypeJoy(localStorage.getItem("joyType") || "basic");
 /*
  * Live Stream Websocket
  */
-function liveOpen() {
-  console.log("Opening Live Stream...");
-}
+// function liveOpen() {
+//   console.log("Opening Live Stream...");
+// }
 
-function liveClose() {
-  console.log("Closing Live Stream...");
-  setTimeout(initLive, 2000);
-}
+// function liveClose() {
+//   console.log("Closing Live Stream...");
+//   setTimeout(initLive, 2000);
+// }
 
-function liveMessage(msg) {
-  var bytes = new Uint8Array(msg.data);
-  var binary = "";
-  var len = bytes.byteLength;
-  for (var i = 0; i < len; i++) {
-    binary += String.fromCharCode(bytes[i]);
-  }
-  var img = document.getElementById("live");
-  img.src = "data:image/jpg;base64," + window.btoa(binary);
-  FPS = 1000 / (Date.now() - lastFrameTime);
-  lastFrameTime = Date.now();
-  document.getElementById("fps").innerHTML = FPS.toFixed(2);
-}
-
-function initLive() {
-  console.log("Initializing Live Stream...");
-  try {
-    var host = `ws://${camIp}`;
-    liveSocket = new WebSocket(host);
-    liveSocket.binaryType = "arraybuffer";
-    liveSocket.onopen = liveOpen;
-    liveSocket.onclose = liveClose;
-    liveSocket.onmessage = liveMessage;
-  } catch (e) {
-    console.log(e);
-  }
-}
+// function initLive() {
+//   console.log("Initializing Live Stream...");
+//   try {
+//     var host = `ws://${camIp}`;
+//     liveSocket = new WebSocket(host);
+//     liveSocket.binaryType = "arraybuffer";
+//     liveSocket.onopen = liveOpen;
+//     liveSocket.onclose = liveClose;
+//     liveSocket.onmessage = liveMessage;
+//   } catch (e) {
+//     console.log(e);
+//   }
+// }
