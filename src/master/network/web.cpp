@@ -15,9 +15,6 @@
 AsyncWebServer server(80);
 AsyncWebSocket ws("/ws");
 WebSocketsClient webSocketsClient;
-WebSocketsServer webSocketServer(81);
-
-AsyncWebSocketClient* clients[2];
 
 uint8_t* buffer = NULL;
 
@@ -44,6 +41,7 @@ String Web::indexPageProcessor(const String& var) {
 
 // Callback function that receives messages from websocket client
 void Web::onWsEvent(AsyncWebSocket* server, AsyncWebSocketClient* client, AwsEventType type, void* arg, uint8_t* data, size_t len) {
+#if (MODE_OPERATION == MODE_AP)  // SERVER MODE
     switch (type) {
         case WS_EVT_CONNECT: {
             AsyncWebServerRequest* request = (AsyncWebServerRequest*)arg;
@@ -121,6 +119,7 @@ void Web::onWsEvent(AsyncWebSocket* server, AsyncWebSocketClient* client, AwsEve
             break;
         }
     }
+#endif
 }
 
 // Function called when resource is not found on the server
@@ -140,11 +139,7 @@ void Web::webSocketEventClient(WStype_t type, uint8_t* payload, size_t length) {
             break;
         case WStype_TEXT:
             Serial.printf("[] Text: %s\n", payload);
-            if (strcmp((char*)payload, "start") == 0) {
-                Serial.println("Starting loopStream");
-            } else if (strcmp((char*)payload, "stop") == 0) {
-                Serial.println("Stopping loopStream");
-            }
+            sendCarCommand((char*)payload);
 
             break;
         case WStype_BIN:
@@ -160,98 +155,58 @@ void Web::webSocketEventClient(WStype_t type, uint8_t* payload, size_t length) {
     }
 }
 
-void Web::webSocketEvent(uint8_t num, WStype_t type, uint8_t* payload, size_t length) {
-    switch (type) {
-        case WStype_DISCONNECTED:
-            Serial.printf("[%u] Disconnected!\n", num);
-            break;
-
-        case WStype_CONNECTED: {
-            IPAddress ip = webSocketServer.remoteIP(num);
-            Serial.printf("[%u] Connected from %d.%d.%d.%d url: %s\n", num, ip[0], ip[1], ip[2], ip[3], payload);
-
-            // send message to client
-            // webSocketServer.sendTXT(num, "Connected");
-            break;
-        }
-
-        case WStype_TEXT:
-            Serial.printf("[%u] get Text: %s\n", num, payload);
-
-            // send message to client
-            // webSocket.sendTXT(num, "message here");
-
-            // send data to all connected clients
-            // webSocket.broadcastTXT("message here");
-            break;
-
-        case WStype_BIN:
-            Serial.printf("[%u] get binary length: %u\n", num, length);
-            // hexdump(payload, length);
-
-            // send message to client
-            // webSocket.sendBIN(num, payload, length);
-            break;
-
-        case WStype_ERROR:
-        case WStype_FRAGMENT_TEXT_START:
-        case WStype_FRAGMENT_BIN_START:
-        case WStype_FRAGMENT:
-        case WStype_FRAGMENT_FIN:
-            break;
-    }
-}
-
-void Web::setup(short mode) {
-    for (int i = 0; i < 2; i++) {
-        clients[i] = NULL;
-    }
-
+void Web::setup() {
     // Initialize SPIFFS
     if (!SPIFFS.begin(true)) {
         Serial.println("An Error has occurred while mounting SPIFFS");
         return;
     }
 
-    if (mode == MODE_AP) {
-        // Add callback function to websocket server
-        // ws.onEvent(onWsEvent);
+#if (MODE_OPERATION == MODE_AP)  // SERVER MODE
 
-        // server.addHandler(&ws);
+    // Add callback function to websocket server
+    ws.onEvent(onWsEvent);
 
-        server.on("/", HTTP_GET, [](AsyncWebServerRequest* request) {
-            Serial.println("Requesting index page...");
-            request->send(SPIFFS, "/index.html", "text/html", false, indexPageProcessor);
-        });
+    server.addHandler(&ws);
 
-        // Route to load bootstrap.min.css file
-        server.on("/css/bootstrap.min.css", HTTP_GET, [](AsyncWebServerRequest* request) {
-            request->send(SPIFFS, "/css/bootstrap.min.css", "text/css");
-        });
+    server.on("/", HTTP_GET, [](AsyncWebServerRequest* request) {
+        Serial.println("Requesting index page...");
+        request->send(SPIFFS, "/index.html", "text/html", false, indexPageProcessor);
+    });
 
-        // Route to load custom.css file
-        server.on("/css/custom.css", HTTP_GET, [](AsyncWebServerRequest* request) {
-            request->send(SPIFFS, "/css/custom.css", "text/css");
-        });
+    // Route to load bootstrap.min.css file
+    server.on("/css/bootstrap.min.css", HTTP_GET, [](AsyncWebServerRequest* request) {
+        request->send(SPIFFS, "/css/bootstrap.min.css", "text/css");
+    });
 
-        // Route to load custom.js file
-        server.on("/js/custom.js", HTTP_GET, [](AsyncWebServerRequest* request) {
-            request->send(SPIFFS, "/js/custom.js", "text/javascript");
-        });
+    // Route to load custom.css file
+    server.on("/css/custom.css", HTTP_GET, [](AsyncWebServerRequest* request) {
+        request->send(SPIFFS, "/css/custom.css", "text/css");
+    });
 
-        // On Not Found
-        server.onNotFound(notFound);
+    // Route to load custom.js file
+    server.on("/js/custom.js", HTTP_GET, [](AsyncWebServerRequest* request) {
+        request->send(SPIFFS, "/js/custom.js", "text/javascript");
+    });
 
-        // Start server
-        server.begin();
+    // On Not Found
+    server.onNotFound(notFound);
 
-        webSocketServer.begin();
-        webSocketServer.onEvent(webSocketEvent);
+    // Start server
+    server.begin();
 
-    } else if (mode == MODE_STA) {
-        // Iniciação do WebSocket
-        webSocketsClient.begin(HOST_EXTERNAL, PORT_EXTERNAL, "/");
-        webSocketsClient.setExtraHeaders("X-Auth-Token: 223\r\nX-Device-ID: 223\r\nX-Device-Type: CAM\r\n");
-        webSocketsClient.onEvent(webSocketEventClient);
-    }
+#endif
+#if (MODE_OPERATION == MODE_STA)  // CLIENT MODE
+
+    // Iniciação do WebSocket
+    webSocketsClient.begin(HOST_ADDR, PORT_ADDR, "/", "ESP32");
+    webSocketsClient.setExtraHeaders("X-Auth-Token: 223\r\nX-Device-ID: 223\r\nX-Device-Type: ESP32\r\n");
+    webSocketsClient.onEvent(webSocketEventClient);
+#endif
+}
+
+void Web::loop() {
+#if (MODE_OPERATION == MODE_STA)  // CLIENT MODE
+    webSocketsClient.loop();
+#endif
 }

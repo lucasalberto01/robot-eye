@@ -26,8 +26,6 @@ Motor::Motor() {
     // Attach Pin to Channel
     ledcAttachPin(MOTOR_M1_EN, CHANNEL_0);
     ledcAttachPin(MOTOR_M2_EN, CHANNEL_1);
-
-    setCurrentSpeed(speedSettings::NORMAL);
 }
 // Move the car forward
 void Motor::moveForward(short int vel) {

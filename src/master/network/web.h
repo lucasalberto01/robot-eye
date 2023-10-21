@@ -10,7 +10,8 @@ class Web {
    private:
     /* data */
    public:
-    void setup(short mode);
+    void setup();
+    void loop();
     static void notFound(AsyncWebServerRequest* request);
     static void onWsEvent(AsyncWebSocket* server, AsyncWebSocketClient* client, AwsEventType type, void* arg, uint8_t* data, size_t len);
     static void webSocketEventClient(WStype_t type, uint8_t* payload, size_t length);
