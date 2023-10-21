@@ -5,6 +5,12 @@
  * ROBOT CONFIGURATION
  */
 
+#define WIFI_SSID "<your wifi ssid>"
+#define WIFI_PASS "<your wifi password>"
+
+#define HOST_ADDR "<your ngrok host>"
+#define PORT_ADDR 80
+
 #define TIME_TO_SLEEP 60000  // 1 minute
 
 /*
@@ -12,9 +18,9 @@
  */
 
 // Motor 1
-#define MOTOR_M1_IN1 16
+#define MOTOR_M1_IN1 0
 #define MOTOR_M1_IN2 4
-#define MOTOR_M1_EN 0
+#define MOTOR_M1_EN 25
 
 // Motor 2
 #define MOTOR_M2_IN1 32
