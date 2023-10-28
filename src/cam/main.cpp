@@ -133,6 +133,9 @@ void webSocketEvent(WStype_t type, uint8_t* payload, size_t length) {
             } else if (strcmp((char*)payload, "flash") == 0) {
                 toggleFlash();
                 Serial.println("[] Toggling flash: " + (flash_on ? String("ON") : String("OFF")));
+            } else if (strcmp((char*)payload, "ping") == 0) {
+                webSocket.sendTXT("pong");
+                Serial.println("[] Send: Pong");
             }
             break;
 
@@ -140,6 +143,12 @@ void webSocketEvent(WStype_t type, uint8_t* payload, size_t length) {
             Serial.printf("[] Binary: %u\n", length);
             break;
 
+        case WStype_PING:  // Pong is automatically sent
+            Serial.printf("[#] Ping\n");
+            break;
+        case WStype_PONG:  // In case you want to manually send a Pong
+            Serial.printf("[#] Pong\n");
+            break;
         case WStype_ERROR:
         case WStype_FRAGMENT_TEXT_START:
         case WStype_FRAGMENT_BIN_START:
@@ -178,10 +187,10 @@ void setup() {
     config.pin_sscb_scl = SIOC_GPIO_NUM;
     config.pin_pwdn = PWDN_GPIO_NUM;
     config.pin_reset = RESET_GPIO_NUM;
-    config.xclk_freq_hz = 20000000;  // 20MHz
+    config.xclk_freq_hz = 8000000;  // 20MHz
     config.pixel_format = PIXFORMAT_JPEG;
     // Low(ish) default framesize and quality
-    config.frame_size = FRAMESIZE_QVGA;
+    config.frame_size = FRAMESIZE_HVGA;
     config.jpeg_quality = 20;
     config.fb_location = CAMERA_FB_IN_PSRAM;
     config.fb_count = 2;
@@ -218,7 +227,7 @@ void setup() {
 
     // Iniciação do WebSocket
     webSocket.begin(HOST_ADDR, PORT_ADDR, "/", "ESPCAM");
-    webSocket.setExtraHeaders("X-Auth-Token: 123\r\nX-Device-ID: 123\r\nX-Device-Type: CAM\r\n");
+    webSocket.setExtraHeaders("X-Device-ID: 123\r\nX-Device-Type: CAM");
     webSocket.onEvent(webSocketEvent);
 
     // Conexão local
@@ -258,11 +267,16 @@ void Task1code(void* pvParameters) {
     }
 }
 
+const unsigned long interval_frame_ms = 40;
+unsigned long last_frame_ms, current_time_ms = 0;
+
 void Task2code(void* pvParameters) {
     for (;;) {
-        vTaskDelay(2000);
+        vTaskDelay(50);
         yield();
-        while (loop_stream) {
+        current_time_ms = millis();
+        while (loop_stream && (current_time_ms - last_frame_ms) > interval_frame_ms) {
+            last_frame_ms = current_time_ms;
             liveCam();
         }
     }

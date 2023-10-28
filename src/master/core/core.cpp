@@ -25,29 +25,10 @@ void sendCarCommand(const char* command) {
     // Advance movement
     if (strstr(command, "motor#") != NULL) {
         strtok(strdup(command), "#");
-        int angle = atoi(strtok(NULL, "#"));
+        int dir = atoi(strtok(NULL, "#"));
         int speed = atoi(strtok(NULL, "#"));
 
-        // Send command to car
-        if ((angle > 80) && (angle < 100)) {
-            motor.moveForward(speed);
-        } else if ((angle > 260) && (angle < 280)) {
-            motor.moveBackward(speed);
-        } else if ((angle > 170) && (angle < 190)) {
-            motor.turn(0, speed);
-        } else if ((angle > 350) || (angle < 10)) {
-            motor.turn(speed, 0);
-        } else if ((angle > 100) && (angle < 170)) {
-            motor.turn(speed * 7 / 10, speed);
-        } else if ((angle > 10) && (angle < 80)) {
-            motor.turn(speed, speed * 7 / 10);
-        } else if ((angle > 190) && (angle < 260)) {
-            motor.turn(-1 * speed * 7 / 10, -1 * speed);
-        } else if ((angle > 280) && (angle < 350)) {
-            motor.turn(-1 * speed, -1 * speed * 7 / 10);
-        } else {
-            motor.stop();
-        }
+        motor.setDirectionCaterpillar(dir, speed);
 
     }
     // Basic movement

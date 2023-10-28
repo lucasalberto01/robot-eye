@@ -129,3 +129,45 @@ void Motor::turnRight() {
 speedSettings Motor::getCurrentSpeed() {
     return currentSpeedSettings;
 }
+
+void Motor::setDirectionCaterpillar(int dir, int vel) {
+    if (dir > 255) {
+        dir = 255;
+    } else if (dir < -255) {
+        dir = -255;
+    }
+
+    if (vel > 255) {
+        vel = 255;
+    } else if (vel < -255) {
+        vel = -255;
+    }
+
+    float dirCalc = ((float)dir / 255);
+    int motorA = vel - (dirCalc * vel);
+    int motorB = vel + (dirCalc * vel);
+
+    motorA = checkLimit(motorA);
+    motorB = checkLimit(motorB);
+
+     if (motorA >= 0) {
+        digitalWrite(MOTOR_M1_IN1, LOW);
+        digitalWrite(MOTOR_M1_IN2, HIGH);
+    } else {
+        digitalWrite(MOTOR_M1_IN1, HIGH);
+        digitalWrite(MOTOR_M1_IN2, LOW);
+    }
+
+    if (motorB >= 0) {
+        digitalWrite(MOTOR_M2_IN1, LOW);
+        digitalWrite(MOTOR_M2_IN2, HIGH);
+    } else {
+        digitalWrite(MOTOR_M2_IN1, HIGH);
+        digitalWrite(MOTOR_M2_IN2, LOW);
+    }
+
+    ledcWrite(CHANNEL_0, abs(motorA));
+    ledcWrite(CHANNEL_1, abs(motorB));
+
+
+}

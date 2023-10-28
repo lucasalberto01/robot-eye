@@ -138,8 +138,13 @@ void Web::webSocketEventClient(WStype_t type, uint8_t* payload, size_t length) {
 
             break;
         case WStype_TEXT:
-            Serial.printf("[] Text: %s\n", payload);
-            sendCarCommand((char*)payload);
+            if (strcmp((char*)payload, "ping") == 0) {
+                webSocketsClient.sendTXT("pong");
+                break;
+            } else {
+                Serial.printf("[] Text: %s\n", payload);
+                sendCarCommand((char*)payload);
+            }
 
             break;
         case WStype_BIN:
@@ -200,7 +205,7 @@ void Web::setup() {
 
     // Iniciação do WebSocket
     webSocketsClient.begin(HOST_ADDR, PORT_ADDR, "/", "ESP32");
-    webSocketsClient.setExtraHeaders("X-Auth-Token: 223\r\nX-Device-ID: 223\r\nX-Device-Type: ESP32\r\n");
+    webSocketsClient.setExtraHeaders("X-Device-ID: " DEVICE_ID "\r\nX-Device-Type: ESP32");
     webSocketsClient.onEvent(webSocketEventClient);
 #endif
 }

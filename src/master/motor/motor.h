@@ -48,6 +48,8 @@ class Motor {
     void turnRight();
     // Get the current speed settings
     speedSettings getCurrentSpeed();
+    // Set direction and speed
+    void setDirectionCaterpillar(int dir, int vel);
 };
 
 #endif
