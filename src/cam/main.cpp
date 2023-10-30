@@ -43,6 +43,8 @@ IPAddress dns(8, 8, 8, 8);
 
 #define FLASH_GPIO_NUM 4
 
+#define INTERVAL_FRAME_MS 40
+
 WebSocketsServer webSocket = WebSocketsServer(81);
 uint8_t cam_num;
 bool connected = false;
@@ -280,9 +282,12 @@ void setup() {
     pinMode(FLASH_GPIO_NUM, OUTPUT);
 }
 
+unsigned long last_frame_ms = 0;
+
 void loop() {
     webSocket.loop();
-    if (connected == true) {
+    if (connected == true && millis() - last_frame_ms > INTERVAL_FRAME_MS) {
+        last_frame_ms = millis();
         liveCam(cam_num);
     }
 }

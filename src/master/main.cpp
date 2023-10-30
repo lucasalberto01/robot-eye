@@ -42,7 +42,7 @@ Car car;
 MD_RobotEyes eyes;
 
 unsigned long lastCommandTime = 0;
-unsigned long timeToSleep = 60000;
+unsigned long timeToSleep = 1000 * 60 * 5;  // 5 minutes
 bool ledLightOn = false;
 
 void ledToggle() {
@@ -205,8 +205,6 @@ void setupDisplay() {
 void setup() {
     // Initialize the serial monitor baud rate
     Serial.begin(115200);
-    Serial.println("Connecting to ");
-    Serial.println(ssid);
     WiFi.setSleep(WIFI_PS_NONE);
 
 #if ENABLE_CLIENT
@@ -214,6 +212,9 @@ void setup() {
     if (!WiFi.config(local_IP, gateway, subnet, primaryDNS, secondaryDNS)) {
         Serial.println("STA Failed to configure");
     }
+
+    Serial.println("Connecting to ");
+    Serial.println(ssid);
 
     // Connect to WiFi network
     WiFi.begin(ssid, password);
@@ -226,6 +227,11 @@ void setup() {
     for (uint8_t i = 6; i < 11; i++) {            // Update SSID with mac address
         ssid[i] = mac[i + 6];
     }
+    // Print ssid and password
+    Serial.print("SSID: ");
+    Serial.println(ssid);
+    Serial.print("Password: ");
+    Serial.println(password);
     // Host a WiFi Access Point
     WiFi.softAP(ssid, password);
 #endif

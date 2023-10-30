@@ -14,8 +14,8 @@ enum speedSettings {
 class Car {
    private:
     // Motor 1 connections
-    int in1 = 16;
-    int in2 = 17;
+    int in1 = 0;
+    int in2 = 4;
     // Motor 2 connections
     int in3 = 32;
     int in4 = 33;
