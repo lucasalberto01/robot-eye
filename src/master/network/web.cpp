@@ -161,6 +161,13 @@ void Web::webSocketEventClient(WStype_t type, uint8_t* payload, size_t length) {
 }
 
 void Web::setup() {
+    
+    // Get device ID
+    uint32_t id = 0;
+    for(int i=0; i<17; i=i+8) {
+        id |= ((ESP.getEfuseMac() >> (40 - i)) & 0xff) << i;
+    }
+
     // Initialize SPIFFS
     if (!SPIFFS.begin(true)) {
         Serial.println("An Error has occurred while mounting SPIFFS");
@@ -203,9 +210,11 @@ void Web::setup() {
 #endif
 #if (MODE_OPERATION == MODE_STA)  // CLIENT MODE
 
+    String headers = "X-Device-ID: " + String(id) + "\r\nX-Device-Type: ESP32";
+    Serial.printf("DeviceID = %d\n", id);
     // Iniciação do WebSocket
     webSocketsClient.begin(HOST_ADDR, PORT_ADDR, "/", "ESP32");
-    webSocketsClient.setExtraHeaders("X-Device-ID: " DEVICE_ID "\r\nX-Device-Type: ESP32");
+    webSocketsClient.setExtraHeaders(headers.c_str());
     webSocketsClient.onEvent(webSocketEventClient);
 #endif
 }
@@ -214,4 +223,13 @@ void Web::loop() {
 #if (MODE_OPERATION == MODE_STA)  // CLIENT MODE
     webSocketsClient.loop();
 #endif
+}
+
+void Web::sendTelemetry(TTelemetry* telemetry) {
+    uint8_t buffer[256];
+    uint8_t tipo = 0;
+
+    memcpy(buffer, &tipo, sizeof(tipo));
+    memcpy(buffer + sizeof(tipo), telemetry, sizeof(TTelemetry));
+    webSocketsClient.sendBIN(buffer, sizeof(tipo) + sizeof(TTelemetry));
 }

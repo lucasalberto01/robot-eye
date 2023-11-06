@@ -2,16 +2,20 @@
 
 #include <Arduino.h>
 
+
+
 #include "../config.h"
 #include "../core/state.h"
 #include "../light/light.h"
 #include "../motor/motor.h"
 #include "../persona/persona.h"
+#include "../control/control.h"
 
 // Instantiate objects
 Motor motor;
 Persona persona;
 Light light;
+CamControl camControl;
 
 // State
 extern TStateRobot state_robot;
@@ -30,6 +34,15 @@ void sendCarCommand(const char* command) {
 
         motor.setDirectionCaterpillar(dir, speed);
 
+    }else if(strstr(command, "servo#") != NULL){
+        strtok(strdup(command), "#");
+        int tilt = atoi(strtok(NULL, "#"));
+        int pan = atoi(strtok(NULL, "#"));
+
+        Serial.printf("Tilt: %d, Pan: %d\n", tilt, pan);
+        
+        camControl.setCamPan(pan);
+        camControl.setCamTilt(tilt);
     }
     // Basic movement
     else if (strcmp(command, "left") == 0) {

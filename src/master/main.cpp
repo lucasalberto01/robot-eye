@@ -2,9 +2,20 @@
 #include <WiFi.h>
 
 #include "config.h"
+#include "control/control.h"
 #include "core/state.h"
 #include "network/web.h"
 #include "persona/persona.h"
+#include "motor/motor.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+uint8_t temprature_sens_read();
+#ifdef __cplusplus
+}
+#endif
+uint8_t temprature_sens_read();
 
 // Interface to human
 Web web;
@@ -14,6 +25,15 @@ extern Persona persona;
 
 // State
 extern TStateRobot state_robot;
+
+// Telemetry
+extern TTelemetry telemetry;
+
+// Cam control
+extern CamControl camControl;
+
+// Motor
+extern Motor motor;
 
 // Setup function
 void setup() {
@@ -60,13 +80,34 @@ void setup() {
 
     web.setup();
     persona.begin();
+    
 
-    pinMode(RESER_BTN, INPUT);
+    camControl.setup();
+    motor.setup();
+
+    
+    camControl.test();
+    camControl.setCenter();
+
+    Serial.println("Setup done");
+
+    // pinMode(RESER_BTN, INPUT);
 }
 
 void loop() {
     web.loop();
     persona.runAnimation();
+
+    if (millis() - state_robot.lastTelemetryTime >= TIME_TO_TELEMETRY) {
+        // Update telemetry
+        telemetry.battery = 0;  // TODO: Implement battery level
+        telemetry.temperature = ((temprature_sens_read() - 32) / 1.8);
+        telemetry.signal = WiFi.RSSI();
+        web.sendTelemetry(&telemetry);
+
+        // Update last telemetry time
+        state_robot.lastTelemetryTime = millis();
+    }
 
     if (millis() - state_robot.lastCommandTime >= TIME_TO_SLEEP) {
         persona.setState(SLEEPING);

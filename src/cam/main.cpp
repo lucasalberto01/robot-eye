@@ -12,6 +12,25 @@
 #include "soc/rtc_cntl_reg.h"
 #include "soc/soc.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+uint8_t temprature_sens_read();
+#ifdef __cplusplus
+}
+#endif
+uint8_t temprature_sens_read();
+
+
+struct TTelemetry_struct {
+    int8_t battery;
+    int8_t signal;
+    int8_t temperature;
+};
+
+typedef struct TTelemetry_struct TTelemetry;
+
+
 // Set your Static IP address
 IPAddress staticIP(192, 168, 4, 10);
 IPAddress gateway(192, 168, 4, 1);
@@ -42,12 +61,29 @@ IPAddress dns(8, 8, 8, 8);
 WebSocketsClient webSocket;
 TaskHandle_t Task1;
 TaskHandle_t Task2;
+TTelemetry telemetry;
+
+
+
 
 void Task1code(void* pvParameters);
 void Task2code(void* pvParameters);
 
 bool loop_stream = false;
 bool flash_on = false;
+
+void getTelemetry(){
+    telemetry.battery = 0; //TODO: Implement battery level
+    telemetry.temperature = ((temprature_sens_read() - 32) / 1.8);
+    telemetry.signal = WiFi.RSSI();
+
+    uint8_t buffer[256];
+    uint8_t tipo = 0;
+
+    memcpy(buffer, &tipo, sizeof(tipo));
+    memcpy(buffer + sizeof(tipo), &telemetry, sizeof(TTelemetry));
+    webSocket.sendBIN(buffer, sizeof(tipo) + sizeof(TTelemetry));
+}
 
 void toggleFlash() {
     if (flash_on) {
@@ -87,10 +123,20 @@ void liveCam() {
         }
     }
     if (res == ESP_OK) {
-        // replace this with your own function
-        if (webSocket.sendBIN(fb->buf, fb->len) == false) {
+        // Send the image
+        // Add Type 1 to init the stream
+        uint8_t type = 1;
+        uint8_t buffer[_jpg_buf_len + sizeof(type)];
+        memcpy(buffer, &type, sizeof(type));
+        memcpy(buffer + sizeof(type), _jpg_buf, _jpg_buf_len);
+        if (webSocket.sendBIN(buffer, sizeof(type) + _jpg_buf_len) == false) {
             Serial.println("Error sending frame");
         }
+      
+      
+        // if (webSocket.sendBIN(fb->buf, fb->len) == false) {
+        //     Serial.println("Error sending frame");
+        // }
         Serial.println("Frame length: " + String(fb->len / 1024) + " Kbytes");
 
 #if DEBUG_TIME
@@ -187,7 +233,7 @@ void setup() {
     config.pin_sscb_scl = SIOC_GPIO_NUM;
     config.pin_pwdn = PWDN_GPIO_NUM;
     config.pin_reset = RESET_GPIO_NUM;
-    config.xclk_freq_hz = 8000000;  // 20MHz
+    config.xclk_freq_hz = 20000000;  // 20MHz
     config.pixel_format = PIXFORMAT_JPEG;
     // Low(ish) default framesize and quality
     config.frame_size = FRAMESIZE_HVGA;
@@ -208,7 +254,7 @@ void setup() {
     // if (WiFi.config(staticIP, gateway, subnet, dns, dns) == false) {
     //     Serial.println("Configuration failed.");
     // }
-
+    Serial.println("SSID: " + String(WIFI_SSID) + "\tPASS: " + String(WIFI_PASS));
     // Conexão WiFi
     WiFi.begin(WIFI_SSID, WIFI_PASS);
     while (WiFi.status() != WL_CONNECTED) {
@@ -225,9 +271,18 @@ void setup() {
     s->set_gain_ctrl(s, 1);  // enable gain control (auto gain)
     s->set_lenc(s, 1);       // enable lens correction
 
+    // Get device ID
+    uint32_t id = 0;
+    for(int i=0; i<17; i=i+8) {
+        id |= ((ESP.getEfuseMac() >> (40 - i)) & 0xff) << i;
+    }
+
+    String headers = "X-Device-ID: " + String(id) + "\r\nX-Device-Type: ESPCAM";
+    Serial.printf("DeviceID = %d\n", id);
+
     // Iniciação do WebSocket
     webSocket.begin(HOST_ADDR, PORT_ADDR, "/", "ESPCAM");
-    webSocket.setExtraHeaders("X-Device-ID: 123\r\nX-Device-Type: CAM");
+    webSocket.setExtraHeaders(headers.c_str());
     webSocket.onEvent(webSocketEvent);
 
     // Conexão local
@@ -259,16 +314,26 @@ void setup() {
     Serial.println("Setup finished");
 }
 
+const unsigned long interval_frame_ms = 40;
+unsigned long last_frame_ms, current_time_ms = 0;
+
+const unsigned long interval_telemetry_ms = 1000;
+unsigned long last_telemetry_ms = 0;
+
 void Task1code(void* pvParameters) {
     for (;;) {
         vTaskDelay(100);
         yield();
+
+        if(current_time_ms - last_telemetry_ms > interval_telemetry_ms){
+            last_telemetry_ms = current_time_ms;
+            getTelemetry();
+            Serial.println("Battery: " + String(telemetry.battery) + "%\tSignal: " + String(telemetry.signal) + " dBm\tTemperature: " + String(telemetry.temperature) + "°C");
+        }
+
         webSocket.loop();
     }
 }
-
-const unsigned long interval_frame_ms = 40;
-unsigned long last_frame_ms, current_time_ms = 0;
 
 void Task2code(void* pvParameters) {
     for (;;) {
@@ -279,6 +344,8 @@ void Task2code(void* pvParameters) {
             last_frame_ms = current_time_ms;
             liveCam();
         }
+
+
     }
 }
 

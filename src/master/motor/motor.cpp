@@ -5,7 +5,11 @@
 #include "../config.h"
 
 Motor::Motor() {
-    // Set all pins to output
+
+}
+// Setup the motor
+void Motor::setup(){
+        // Set all pins to output
     pinMode(MOTOR_M1_IN1, OUTPUT);
     pinMode(MOTOR_M1_IN2, OUTPUT);
     pinMode(MOTOR_M2_IN1, OUTPUT);
@@ -27,6 +31,7 @@ Motor::Motor() {
     ledcAttachPin(MOTOR_M1_EN, CHANNEL_0);
     ledcAttachPin(MOTOR_M2_EN, CHANNEL_1);
 }
+
 // Move the car forward
 void Motor::moveForward(short int vel) {
     digitalWrite(MOTOR_M1_IN1, LOW);

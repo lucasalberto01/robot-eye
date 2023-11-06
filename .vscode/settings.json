@@ -55,5 +55,6 @@
     "cinttypes": "cpp",
     "typeinfo": "cpp"
   },
-  "cmake.sourceDirectory": "${workspaceFolder}/.pio/libdeps/esp32dev/AsyncTCP"
+  "cmake.sourceDirectory": "${workspaceFolder}/.pio/libdeps/esp32dev/AsyncTCP",
+  "C_Cpp.errorSquiggles": "disabled"
 }

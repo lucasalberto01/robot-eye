@@ -15,8 +15,8 @@
 // PWM Setup to control motor speed
 // Do not change these values
 #define FREQ 2000
-#define CHANNEL_0 1
-#define CHANNEL_1 2
+#define CHANNEL_0 10
+#define CHANNEL_1 11
 #define RESOLUTION 8
 
 class Motor {
@@ -30,6 +30,9 @@ class Motor {
 
    public:
     Motor();
+
+    // Setup the motor
+    void setup();
     // Move the car forward
     void moveForward(short int vel);
     // Move the car backward

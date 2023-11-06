@@ -5,6 +5,7 @@
 #include <WebSocketsClient.h>
 
 #include "../config.h"
+#include "../core/state.h"
 
 class Web {
    private:
@@ -12,6 +13,7 @@ class Web {
    public:
     void setup();
     void loop();
+    void sendTelemetry(TTelemetry* telemetry);
     static void notFound(AsyncWebServerRequest* request);
     static void onWsEvent(AsyncWebSocket* server, AsyncWebSocketClient* client, AwsEventType type, void* arg, uint8_t* data, size_t len);
     static void webSocketEventClient(WStype_t type, uint8_t* payload, size_t length);
