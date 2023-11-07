@@ -21,7 +21,6 @@ uint8_t temprature_sens_read();
 #endif
 uint8_t temprature_sens_read();
 
-
 struct TTelemetry_struct {
     int8_t battery;
     int8_t signal;
@@ -29,7 +28,6 @@ struct TTelemetry_struct {
 };
 
 typedef struct TTelemetry_struct TTelemetry;
-
 
 // Set your Static IP address
 IPAddress staticIP(192, 168, 4, 10);
@@ -61,28 +59,31 @@ IPAddress dns(8, 8, 8, 8);
 WebSocketsClient webSocket;
 TaskHandle_t Task1;
 TaskHandle_t Task2;
+TaskHandle_t Task3;
 TTelemetry telemetry;
-
-
-
 
 void Task1code(void* pvParameters);
 void Task2code(void* pvParameters);
+void Task3code(void* pvParameters);
 
 bool loop_stream = false;
 bool flash_on = false;
 
-void getTelemetry(){
-    telemetry.battery = 0; //TODO: Implement battery level
+void getTelemetry() {
+    telemetry.battery = 0;  // TODO: Implement battery level
     telemetry.temperature = ((temprature_sens_read() - 32) / 1.8);
     telemetry.signal = WiFi.RSSI();
 
-    uint8_t buffer[256];
-    uint8_t tipo = 0;
+    uint8_t buffer[sizeof(uint8_t) + sizeof(TTelemetry)];
 
-    memcpy(buffer, &tipo, sizeof(tipo));
-    memcpy(buffer + sizeof(tipo), &telemetry, sizeof(TTelemetry));
-    webSocket.sendBIN(buffer, sizeof(tipo) + sizeof(TTelemetry));
+    // Preencha o buffer diretamente sem memcpy
+    buffer[0] = 0;
+
+    uint8_t* telemetry_ptr = (uint8_t*)&telemetry;
+    for (size_t i = 0; i < sizeof(TTelemetry); i++) {
+        buffer[sizeof(uint8_t) + i] = telemetry_ptr[i];
+    }
+    webSocket.sendBIN(buffer, sizeof(buffer));
 }
 
 void toggleFlash() {
@@ -102,7 +103,6 @@ void liveCam() {
 
     esp_err_t res = ESP_OK;
     size_t _jpg_buf_len = 0;
-    uint8_t* _jpg_buf = NULL;
     camera_fb_t* fb = esp_camera_fb_get();
 
 #if DEBUG_TIME
@@ -118,43 +118,40 @@ void liveCam() {
             Serial.println("STREAM: Non-JPEG frame returned by camera module");
             res = ESP_FAIL;
         } else {
-            _jpg_buf_len = fb->len;
-            _jpg_buf = fb->buf;
+            // Send the image
+            uint8_t type = 1;
+            size_t message_len = 1 + fb->len;
+            uint8_t buffer[message_len];
+            buffer[0] = type;
+
+            for (size_t i = 0; i < fb->len; i++) {
+                buffer[i + 1] = fb->buf[i];
+            }
+            // Print buffer size
+            Serial.println("Buffer size: " + String(message_len));
+
+            // Verificar se o envio teve êxito
+            if (webSocket.sendBIN(buffer, sizeof(buffer)) == false) {
+                Serial.println("Error sending frame");
+            }
         }
     }
-    if (res == ESP_OK) {
-        // Send the image
-        // Add Type 1 to init the stream
-        uint8_t type = 1;
-        uint8_t buffer[_jpg_buf_len + sizeof(type)];
-        memcpy(buffer, &type, sizeof(type));
-        memcpy(buffer + sizeof(type), _jpg_buf, _jpg_buf_len);
-        if (webSocket.sendBIN(buffer, sizeof(type) + _jpg_buf_len) == false) {
-            Serial.println("Error sending frame");
-        }
-      
-      
-        // if (webSocket.sendBIN(fb->buf, fb->len) == false) {
-        //     Serial.println("Error sending frame");
-        // }
-        Serial.println("Frame length: " + String(fb->len / 1024) + " Kbytes");
 
 #if DEBUG_TIME
-        unsigned long t_end_send = millis();
-        Serial.printf("Send in %lu ms - ", t_end_send - t_end_capture);
-        Serial.printf("Signal RSSI: %d dBm\n", WiFi.RSSI());
+    unsigned long t_end_send = millis();
+    Serial.printf("Send in %lu ms - ", t_end_send - t_end_capture);
 #endif
-    }
 
     // return the frame buffer back to be reused
     if (fb) {
         esp_camera_fb_return(fb);
-        fb = NULL;
-        _jpg_buf = NULL;
-    } else if (_jpg_buf) {
-        free(_jpg_buf);
-        _jpg_buf = NULL;
     }
+}
+
+void changeConfigCam(int quality, int framesize) {
+    sensor_t* s = esp_camera_sensor_get();
+    s->set_quality(s, quality);
+    s->set_framesize(s, (framesize_t)framesize);
 }
 
 void webSocketEvent(WStype_t type, uint8_t* payload, size_t length) {
@@ -182,6 +179,12 @@ void webSocketEvent(WStype_t type, uint8_t* payload, size_t length) {
             } else if (strcmp((char*)payload, "ping") == 0) {
                 webSocket.sendTXT("pong");
                 Serial.println("[] Send: Pong");
+            } else if (strstr((char*)payload, "frame#") != NULL) {
+                strtok((char*)payload, "#");
+                int framesize = atoi(strtok(NULL, "#"));
+                int quality = atoi(strtok(NULL, "#"));
+                changeConfigCam(quality, framesize);
+                Serial.printf("[] Change config: %d %d\n", framesize, quality);
             }
             break;
 
@@ -236,8 +239,8 @@ void setup() {
     config.xclk_freq_hz = 20000000;  // 20MHz
     config.pixel_format = PIXFORMAT_JPEG;
     // Low(ish) default framesize and quality
-    config.frame_size = FRAMESIZE_HVGA;
-    config.jpeg_quality = 20;
+    config.frame_size = FRAMESIZE_VGA;
+    config.jpeg_quality = 10;
     config.fb_location = CAMERA_FB_IN_PSRAM;
     config.fb_count = 2;
     config.grab_mode = CAMERA_GRAB_LATEST;
@@ -266,14 +269,32 @@ void setup() {
     // Configuração da câmera
     static sensor_t* s = esp_camera_sensor_get();
     // set initial flips
-    s->set_hmirror(s, 1);    // flip it back
-    s->set_vflip(s, 1);      // flip it back
-    s->set_gain_ctrl(s, 1);  // enable gain control (auto gain)
-    s->set_lenc(s, 1);       // enable lens correction
+    s->set_hmirror(s, 1);                     // flip it back
+    s->set_vflip(s, 1);                       // flip it back
+    s->set_brightness(s, 0);                  // -2 to 2
+    s->set_contrast(s, 0);                    // -2 to 2
+    s->set_saturation(s, 0);                  // -2 to 2
+    s->set_special_effect(s, 0);              // 0 to 6 (0 - No Effect, 1 - Negative, 2 - Grayscale, 3 - Red Tint, 4 - Green Tint, 5 - Blue Tint, 6 - Sepia)
+    s->set_whitebal(s, 1);                    // aka 'awb' in the UI; 0 = disable , 1 = enable
+    s->set_awb_gain(s, 1);                    // 0 = disable , 1 = enable
+    s->set_wb_mode(s, 0);                     // 0 to 4 - if awb_gain enabled (0 - Auto, 1 - Sunny, 2 - Cloudy, 3 - Office, 4 - Home)
+    s->set_exposure_ctrl(s, 1);               // 0 = disable , 1 = enable
+    s->set_aec2(s, 0);                        // 0 = disable , 1 = enable
+    s->set_ae_level(s, 0);                    // -2 to 2
+    s->set_aec_value(s, 300);                 // 0 to 1200
+    s->set_gain_ctrl(s, 1);                   // 0 = disable , 1 = enable
+    s->set_agc_gain(s, 0);                    // 0 to 30
+    s->set_gainceiling(s, (gainceiling_t)0);  // 0 to 6
+    s->set_bpc(s, 0);                         // 0 = disable , 1 = enable
+    s->set_wpc(s, 1);                         // 0 = disable , 1 = enable
+    s->set_raw_gma(s, 1);                     // 0 = disable , 1 = enable
+    s->set_lenc(s, 1);                        // 0 = disable , 1 = enable
+    s->set_dcw(s, 1);                         // 0 = disable , 1 = enable
+    s->set_colorbar(s, 0);                    // 0 = disable , 1 = enable
 
     // Get device ID
     uint32_t id = 0;
-    for(int i=0; i<17; i=i+8) {
+    for (int i = 0; i < 17; i = i + 8) {
         id |= ((ESP.getEfuseMac() >> (40 - i)) & 0xff) << i;
     }
 
@@ -293,7 +314,7 @@ void setup() {
     xTaskCreatePinnedToCore(
         Task1code, /* Task function. */
         "Task1",   /* name of task. */
-        10000,     /* Stack size of task */
+        10 * 1024, /* Stack size of task */
         NULL,      /* parameter of the task */
         1,         /* priority of the task */
         &Task1,    /* Task handle to keep track of created task */
@@ -304,33 +325,30 @@ void setup() {
     xTaskCreatePinnedToCore(
         Task2code, /* Task function. */
         "Task2",   /* name of task. */
-        10000,     /* Stack size of task */
+        80 * 1024, /* Stack size of task */
         NULL,      /* parameter of the task */
         1,         /* priority of the task */
         &Task2,    /* Task handle to keep track of created task */
         1);        /* pin task to core 1 */
     delay(500);
 
+    // create task to telemetry , run in 1 in 1 second
+    xTaskCreatePinnedToCore(
+        Task3code, /* Task function. */
+        "Task3",   /* name of task. */
+        2 * 1024,  /* Stack size of task */
+        NULL,      /* parameter of the task */
+        1,         /* priority of the task */
+        &Task3,    /* Task handle to keep track of created task */
+        0);        /* pin task to core 0 */
+
     Serial.println("Setup finished");
 }
-
-const unsigned long interval_frame_ms = 40;
-unsigned long last_frame_ms, current_time_ms = 0;
-
-const unsigned long interval_telemetry_ms = 1000;
-unsigned long last_telemetry_ms = 0;
 
 void Task1code(void* pvParameters) {
     for (;;) {
         vTaskDelay(100);
-        yield();
-
-        if(current_time_ms - last_telemetry_ms > interval_telemetry_ms){
-            last_telemetry_ms = current_time_ms;
-            getTelemetry();
-            Serial.println("Battery: " + String(telemetry.battery) + "%\tSignal: " + String(telemetry.signal) + " dBm\tTemperature: " + String(telemetry.temperature) + "°C");
-        }
-
+        // yield();
         webSocket.loop();
     }
 }
@@ -338,14 +356,17 @@ void Task1code(void* pvParameters) {
 void Task2code(void* pvParameters) {
     for (;;) {
         vTaskDelay(50);
-        yield();
-        current_time_ms = millis();
-        while (loop_stream && (current_time_ms - last_frame_ms) > interval_frame_ms) {
-            last_frame_ms = current_time_ms;
-            liveCam();
-        }
+        // yield();
+        if (loop_stream) liveCam();
+    }
+}
 
-
+void Task3code(void* pvParameters) {
+    for (;;) {
+        vTaskDelay(1000);
+        // yield();
+        getTelemetry();
+        Serial.println("Battery: " + String(telemetry.battery) + "%\tSignal: " + String(telemetry.signal) + " dBm\tTemperature: " + String(telemetry.temperature) + "°C");
     }
 }
 
