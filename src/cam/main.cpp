@@ -57,14 +57,7 @@ IPAddress dns(8, 8, 8, 8);
 #define FLASH_GPIO_NUM 4
 
 WebSocketsClient webSocket;
-TaskHandle_t Task1;
-TaskHandle_t Task2;
-TaskHandle_t Task3;
 TTelemetry telemetry;
-
-void Task1code(void* pvParameters);
-void Task2code(void* pvParameters);
-void Task3code(void* pvParameters);
 
 bool loop_stream = false;
 bool flash_on = false;
@@ -74,18 +67,30 @@ void getTelemetry() {
     telemetry.temperature = ((temprature_sens_read() - 32) / 1.8);
     telemetry.signal = WiFi.RSSI();
 
-    uint8_t buffer[sizeof(uint8_t) + sizeof(TTelemetry)];
+    // Exibe os dados de telemetria no monitor serial
+    Serial.println("[] Telemetry: Battery: " + String(telemetry.battery) + "%\tSignal: " + String(telemetry.signal) + " dBm\tTemperature: " + String(telemetry.temperature) + "°C");
 
-    // Preencha o buffer diretamente sem memcpy
+    // Aloque memória para o buffer dinamicamente
+    size_t buffer_size = sizeof(uint8_t) + sizeof(TTelemetry);
+    uint8_t* buffer = (uint8_t*)malloc(buffer_size);
+
+    if (buffer == NULL) {
+        // Lidar com erro de alocação de memória, se necessário
+        Serial.println("Error allocating memory for buffer");
+        return;
+    }
+
+    // Preencha o buffer diretamente
     buffer[0] = 0;
 
-    uint8_t* telemetry_ptr = (uint8_t*)&telemetry;
-    for (size_t i = 0; i < sizeof(TTelemetry); i++) {
-        buffer[sizeof(uint8_t) + i] = telemetry_ptr[i];
-    }
-    webSocket.sendBIN(buffer, sizeof(buffer));
-}
+    // Use memcpy para copiar os dados da estrutura para o buffer
+    memcpy(buffer + sizeof(uint8_t), &telemetry, sizeof(TTelemetry));
 
+    // Use o buffer conforme necessário
+    webSocket.sendBIN(buffer, sizeof(buffer));
+    // Libere a memória alocada quando não for mais necessária
+    free(buffer);
+}
 void toggleFlash() {
     if (flash_on) {
         digitalWrite(FLASH_GPIO_NUM, LOW);
@@ -121,18 +126,21 @@ void liveCam() {
             // Send the image
             uint8_t type = 1;
             size_t message_len = 1 + fb->len;
-            uint8_t buffer[message_len];
-            buffer[0] = type;
+            uint8_t* buffer = (uint8_t*)malloc(message_len);  // Alocar dinamicamente no heap
 
-            for (size_t i = 0; i < fb->len; i++) {
-                buffer[i + 1] = fb->buf[i];
-            }
-            // Print buffer size
-            Serial.println("Buffer size: " + String(message_len));
+            if (buffer) {
+                buffer[0] = type;  // Inclui o tipo no início da mensagem
+                memcpy(&buffer[1], fb->buf, fb->len);
 
-            // Verificar se o envio teve êxito
-            if (webSocket.sendBIN(buffer, sizeof(buffer)) == false) {
-                Serial.println("Error sending frame");
+                // Verificar se o envio teve êxito
+                if (webSocket.sendBIN(buffer, message_len) == false) {
+                    Serial.println("Error sending frame");
+                }
+
+                // Liberar a memória alocada
+                free(buffer);
+            } else {
+                Serial.println("Failed to allocate memory for buffer");
             }
         }
     }
@@ -178,6 +186,7 @@ void webSocketEvent(WStype_t type, uint8_t* payload, size_t length) {
                 Serial.println("[] Toggling flash: " + (flash_on ? String("ON") : String("OFF")));
             } else if (strcmp((char*)payload, "ping") == 0) {
                 webSocket.sendTXT("pong");
+                // webSocket.sendBIN(buffer, sizeof(buffer));
                 Serial.println("[] Send: Pong");
             } else if (strstr((char*)payload, "frame#") != NULL) {
                 strtok((char*)payload, "#");
@@ -302,74 +311,36 @@ void setup() {
     Serial.printf("DeviceID = %d\n", id);
 
     // Iniciação do WebSocket
-    webSocket.begin(HOST_ADDR, PORT_ADDR, "/", "ESPCAM");
-    webSocket.setExtraHeaders(headers.c_str());
+    webSocket.begin(HOST_ADDR, PORT_ADDR, "/");
     webSocket.onEvent(webSocketEvent);
+    webSocket.setExtraHeaders(headers.c_str());
+    webSocket.setReconnectInterval(5000);
 
     // Conexão local
     Serial.print("IP address: ");
     Serial.println(WiFi.localIP());
 
-    // create a task that will be executed in the Task1code() function, with priority 1 and executed on core 0
-    xTaskCreatePinnedToCore(
-        Task1code, /* Task function. */
-        "Task1",   /* name of task. */
-        10 * 1024, /* Stack size of task */
-        NULL,      /* parameter of the task */
-        1,         /* priority of the task */
-        &Task1,    /* Task handle to keep track of created task */
-        0);        /* pin task to core 0 */
-    delay(500);
-
-    // create a task that will be executed in the Task2code() function, with priority 1 and executed on core 1
-    xTaskCreatePinnedToCore(
-        Task2code, /* Task function. */
-        "Task2",   /* name of task. */
-        80 * 1024, /* Stack size of task */
-        NULL,      /* parameter of the task */
-        1,         /* priority of the task */
-        &Task2,    /* Task handle to keep track of created task */
-        1);        /* pin task to core 1 */
-    delay(500);
-
-    // create task to telemetry , run in 1 in 1 second
-    xTaskCreatePinnedToCore(
-        Task3code, /* Task function. */
-        "Task3",   /* name of task. */
-        2 * 1024,  /* Stack size of task */
-        NULL,      /* parameter of the task */
-        1,         /* priority of the task */
-        &Task3,    /* Task handle to keep track of created task */
-        0);        /* pin task to core 0 */
-
     Serial.println("Setup finished");
 }
 
-void Task1code(void* pvParameters) {
-    for (;;) {
-        vTaskDelay(100);
-        // yield();
-        webSocket.loop();
-    }
-}
-
-void Task2code(void* pvParameters) {
-    for (;;) {
-        vTaskDelay(50);
-        // yield();
-        if (loop_stream) liveCam();
-    }
-}
-
-void Task3code(void* pvParameters) {
-    for (;;) {
-        vTaskDelay(1000);
-        // yield();
-        getTelemetry();
-        Serial.println("Battery: " + String(telemetry.battery) + "%\tSignal: " + String(telemetry.signal) + " dBm\tTemperature: " + String(telemetry.temperature) + "°C");
-    }
-}
+unsigned long last_time = 0;
+unsigned long last_time_telemetry = 0;
+unsigned long current_time;
 
 void loop() {
-    vTaskDelete(NULL);
+    webSocket.loop();
+
+    current_time = millis();
+
+    if (current_time - last_time >= 50 && loop_stream) {
+        last_time = current_time;
+        liveCam();
+    }
+
+    current_time = millis();
+
+    if (current_time - last_time_telemetry >= 1000) {
+        last_time_telemetry = current_time;
+        getTelemetry();
+    }
 }
