@@ -5,11 +5,10 @@
 #include "../config.h"
 
 Motor::Motor() {
-
 }
 // Setup the motor
-void Motor::setup(){
-        // Set all pins to output
+void Motor::setup() {
+    // Set all pins to output
     pinMode(MOTOR_M1_IN1, OUTPUT);
     pinMode(MOTOR_M1_IN2, OUTPUT);
     pinMode(MOTOR_M2_IN1, OUTPUT);
@@ -135,44 +134,82 @@ speedSettings Motor::getCurrentSpeed() {
     return currentSpeedSettings;
 }
 
+// void Motor::setDirectionCaterpillar(int dir, int vel) {
+//     if (dir > 255) {
+//         dir = 255;
+//     } else if (dir < -255) {
+//         dir = -255;
+//     }
+
+//     if (vel > 255) {
+//         vel = 255;
+//     } else if (vel < -255) {
+//         vel = -255;
+//     }
+
+//     float dirCalc = ((float)dir / 255);
+//     int motorA = vel - (dirCalc * vel);
+//     int motorB = vel + (dirCalc * vel);
+
+//     motorA = checkLimit(motorA);
+//     motorB = checkLimit(motorB);
+
+//      if (motorA >= 0) {
+//         digitalWrite(MOTOR_M1_IN1, LOW);
+//         digitalWrite(MOTOR_M1_IN2, HIGH);
+//     } else {
+//         digitalWrite(MOTOR_M1_IN1, HIGH);
+//         digitalWrite(MOTOR_M1_IN2, LOW);
+//     }
+
+//     if (motorB >= 0) {
+//         digitalWrite(MOTOR_M2_IN1, LOW);
+//         digitalWrite(MOTOR_M2_IN2, HIGH);
+//     } else {
+//         digitalWrite(MOTOR_M2_IN1, HIGH);
+//         digitalWrite(MOTOR_M2_IN2, LOW);
+//     }
+
+//     ledcWrite(CHANNEL_0, abs(motorA));
+//     ledcWrite(CHANNEL_1, abs(motorB));
+
+// }
+
 void Motor::setDirectionCaterpillar(int dir, int vel) {
-    if (dir > 255) {
-        dir = 255;
-    } else if (dir < -255) {
-        dir = -255;
+    // Clamp dir and vel within the valid range
+    dir = constrain(dir, -255, 255);
+    vel = constrain(vel, -255, 255);
+
+    // Set a threshold for rotation
+    int rotationThreshold = 10;
+
+    // Normalize dir to the range [-1, 1]
+    float dirNorm = static_cast<float>(dir) / 255.0;
+
+    // Calculate individual motor speeds
+    int motorA, motorB;
+
+    if (abs(vel) < rotationThreshold) {
+        // Rotate in place when velocity is within the threshold
+        motorA = -dir;
+        motorB = dir;
+    } else {
+        // Move forward or backward when velocity is outside the threshold
+        motorA = vel - static_cast<int>(dirNorm * vel);
+        motorB = vel + static_cast<int>(dirNorm * vel);
     }
 
-    if (vel > 255) {
-        vel = 255;
-    } else if (vel < -255) {
-        vel = -255;
-    }
-
-    float dirCalc = ((float)dir / 255);
-    int motorA = vel - (dirCalc * vel);
-    int motorB = vel + (dirCalc * vel);
-
+    // Ensure motor speeds are within the valid range
     motorA = checkLimit(motorA);
     motorB = checkLimit(motorB);
 
-     if (motorA >= 0) {
-        digitalWrite(MOTOR_M1_IN1, LOW);
-        digitalWrite(MOTOR_M1_IN2, HIGH);
-    } else {
-        digitalWrite(MOTOR_M1_IN1, HIGH);
-        digitalWrite(MOTOR_M1_IN2, LOW);
-    }
+    // Set the motor directions
+    digitalWrite(MOTOR_M1_IN1, motorA >= 0 ? LOW : HIGH);
+    digitalWrite(MOTOR_M1_IN2, motorA >= 0 ? HIGH : LOW);
+    digitalWrite(MOTOR_M2_IN1, motorB >= 0 ? LOW : HIGH);
+    digitalWrite(MOTOR_M2_IN2, motorB >= 0 ? HIGH : LOW);
 
-    if (motorB >= 0) {
-        digitalWrite(MOTOR_M2_IN1, LOW);
-        digitalWrite(MOTOR_M2_IN2, HIGH);
-    } else {
-        digitalWrite(MOTOR_M2_IN1, HIGH);
-        digitalWrite(MOTOR_M2_IN2, LOW);
-    }
-
+    // Set the motor speeds
     ledcWrite(CHANNEL_0, abs(motorA));
     ledcWrite(CHANNEL_1, abs(motorB));
-
-
 }
