@@ -76,7 +76,7 @@ class Persona {
      * Released any allocated memory and does the necessary to clean
      * up once the object is no longer required.
      */
-    ~Persona(void){};
+    ~Persona(void) {};
 
     /**
      * Initialize the object.
@@ -114,8 +114,12 @@ class Persona {
         _nextEmotion = e;
         _autoReverse = r;
         _animReverse = b;
-        if (force && _state == AWAKE) _animState = S_IDLE;
-    };
+        // if (force && _state == AWAKE) _animState = S_IDLE;
+
+        if (force && _state == AWAKE && e != _currentEmotion) {
+            _animState = S_IDLE;
+        }
+    }
 
     /**
      * Set the blink time.
@@ -206,14 +210,14 @@ class Persona {
     uint16_t _scrollDelay;
 
     // Animation control data
-    animTable_t _animEntry;  // record with animation sequence parameters
-    int8_t _animIndex;       // current index in the animation sequence
-    bool _animReverse;       // true = reverse sequence, false = normal sequence
-    bool _autoReverse;       // true = always play the reverse, false = selected direction only
-    emotion_t _nextEmotion;  // the next emotion to display
-    emotion_t _currentEmotion;
-    emotion_t _idleEmotion;  // the emotion to display when idle
-    const char* _pText;      // pointer to text data in user code. Not nullptr means there is text to print
+    animTable_t _animEntry;     // record with animation sequence parameters
+    int8_t _animIndex;          // current index in the animation sequence
+    bool _animReverse;          // true = reverse sequence, false = normal sequence
+    bool _autoReverse;          // true = always play the reverse, false = selected direction only
+    emotion_t _nextEmotion;     // the next emotion to display
+    emotion_t _currentEmotion;  // the current emotion being displayed
+    emotion_t _idleEmotion;     // the emotion to display when idle
+    const char* _pText;         // pointer to text data in user code. Not nullptr means there is text to print
 
     // Methods
     void loadEye(uint8_t module, uint8_t ch);

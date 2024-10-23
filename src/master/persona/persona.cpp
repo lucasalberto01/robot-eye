@@ -27,7 +27,7 @@
 #endif
 
 MD_MAX72XX M = MD_MAX72XX(HARDWARE_TYPE, CS_PIN, MAX_DEVICES);
-Persona::Persona(void) : _timeBlinkMinimum(5000), _animState(S_IDLE), _autoBlink(true), _nextEmotion(E_NEUTRAL){};
+Persona::Persona(void) : _timeBlinkMinimum(5000), _animState(S_IDLE), _autoBlink(true), _nextEmotion(E_NEUTRAL) {};
 
 void Persona::loadEye(uint8_t module, uint8_t ch) {
     uint8_t buf[EYE_COL_SIZE];
@@ -218,6 +218,7 @@ bool Persona::runAnimation(void)
 
                 // set up the next animation
                 loadSequence(_nextEmotion);
+                _currentEmotion = _nextEmotion;
                 _nextEmotion = E_NONE;
                 _animState = S_ANIMATE;
             } else if (_autoBlink)  // check if we should be blinking

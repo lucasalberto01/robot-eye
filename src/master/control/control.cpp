@@ -1,18 +1,14 @@
+#include "control.h"
+
 #include <Arduino.h>
 #include <ESP32_Servo.h>
 
 #include "../config.h"
 
-#include "control.h"
-
-
 Servo tiltControl;
 Servo panControl;
 
-
-CamControl::CamControl(){
-
-    
+CamControl::CamControl() {
 }
 
 void CamControl::setup() {
@@ -44,8 +40,8 @@ int CamControl::checkLimit(int angle) {
     }
 }
 
-void CamControl::test(){
-    for(int i = 0; i < 180; i++){
+void CamControl::test() {
+    for (int i = 0; i < 180; i++) {
         setCamTilt(i);
         setCamPan(i);
         delay(10);

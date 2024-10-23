@@ -2,8 +2,7 @@
 #define MOTOR_H
 
 #include "../config.h"
-#include "../types.h"
-
+#include "../utils.h"
 /*
   The resolution of the PWM is 8 bit so the value is between 0-255
   We will set the speed between 100 to 255.

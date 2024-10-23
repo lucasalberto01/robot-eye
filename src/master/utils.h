@@ -1,15 +1,13 @@
-#ifndef STATE_H
-#define STATE_H
+#ifndef UTILS_H
+#define UTILS_H
 
-#include "../types.h"
-#include <stdio.h> 
+#include <Arduino.h>
 
-#define MODE_AP 0   // Access point mode
-#define MODE_STA 1  // Station mode
-
-#define MODE_OPERATION MODE_STA
-
-
+enum speedSettings {
+    SLOW = 165,
+    NORMAL = 185,
+    FAST = 255
+};
 
 struct TTelemetry_struct {
     int8_t battery;
@@ -18,15 +16,6 @@ struct TTelemetry_struct {
 };
 
 typedef struct TTelemetry_struct TTelemetry;
-
-struct TMe_struct {
-    char ssid[48];
-    char password[48];
-    short mode;
-    char hostname[48];
-    char serialNumber[6];
-    int port;
-};
 
 typedef struct TMe_struct TMe;
 
@@ -38,4 +27,16 @@ struct TStateRobot_struct {
 
 typedef struct TStateRobot_struct TStateRobot;
 
-#endif  // STATE_H
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+uint8_t temprature_sens_read();
+
+#ifdef __cplusplus
+}
+#endif
+
+uint8_t temprature_sens_read();
+
+#endif  // UTILS_H
